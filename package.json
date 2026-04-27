@@ -1,0 +1,25 @@
+{
+  "name": "flodo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/belmouk/flodo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/belmouk/flodo/issues"
+  },
+  "homepage": "https://github.com/belmouk/flodo#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
