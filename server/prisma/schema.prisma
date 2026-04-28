@@ -11,3 +11,156 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id Int @id @default(autoincrement())
+  username String @unique
+  email String @unique
+  password String
+  teamAdmins TeamAdmin[] 
+  teamMemberships TeamMember[]
+  projectOwnerships ProjectOwner[]
+  projectMemberships ProjectMember[]
+  taskAssignments TaskAssignee[]
+  taskOwnerships TaskAssigner[]
+  workspaceOwnerships WorkspaceAdmin[]
+  workspaceMemberships WorkspaceMember[]
+
+  @@map("users")
+}
+
+model Team {
+  id Int @id @default(autoincrement())
+  name String
+  admins TeamAdmin[]
+  members TeamMember[]
+  workspaces Workspace[] 
+
+  @@map("teams")
+}
+
+model TeamAdmin {
+  team Team @relation(fields: [teamId], references: [id])
+  teamId Int @map("team_id")
+  admin User @relation(fields: [adminId], references: [id])
+  adminId Int @map("admin_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  @@id([adminId, teamId])
+}
+
+model TeamMember {
+  team Team @relation(fields: [teamId], references: [id])
+  teamId Int @map("team_id")
+  member User @relation(fields: [memberId], references: [id])
+  memberId Int @map("member_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+  @@id([memberId, teamId])
+}
+
+model Project {
+  id Int @id @default(autoincrement())
+  name String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @map("updated_at")
+  owners ProjectOwner[]
+  members ProjectMember[]
+  @@map("projects")
+}
+
+model ProjectOwner {
+  owner User @relation(fields: [ownerId], references: [id])
+  ownerId Int @map("owner_id")
+  project Project @relation(fields: [projectId], references: [id])
+  projectId Int @map("project_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  @@id([ownerId, projectId])
+}
+
+model ProjectMember {
+  member User @relation(fields: [memberId], references: [id])
+  memberId Int @map("member_id")
+  project Project @relation(fields: [projectId], references: [id])
+  projectId Int @map("project_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+  @@id([memberId, projectId])
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+  content String
+  status TaskStatus @default(WIP)
+  dueAt DateTime @map("due_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  completedAt DateTime @map("completed_at")
+  assigners TaskAssigner[]
+  assignees TaskAssignee[]
+  @@map("tasks")
+}
+
+model TaskAssigner {
+  assigner User @relation(fields: [assignerId], references: [id])
+  assignerId Int @map("assigned_id")
+  task Task @relation(fields: [taskId], references: [id])
+  taskId Int @map("task_id")
+  @@id([assignerId, taskId])
+}
+
+model TaskAssignee {
+  assignee User @relation(fields: [assigneeId], references: [id])
+  assigneeId Int @map("assigned_id")
+  task Task @relation(fields: [taskId], references: [id])
+  taskId Int @map("task_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  @@id([assigneeId, taskId])
+}
+
+model Workspace {
+  id Int @id @default(autoincrement())
+  name String
+  createdAt DateTime @default(now()) @map("created_at")
+  admins WorkspaceAdmin[]
+  members WorkspaceMember[]
+  team Team? @relation(fields: [teamId], references: [id])
+  teamId Int @map("team_id")
+
+  @@map("workspaces")
+}
+
+model WorkspaceAdmin {
+  admin User @relation(fields: [adminId], references: [id])
+  adminId Int @map("admin_id")
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId Int @map("workspace_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  @@id([adminId, workspaceId])
+}
+
+model WorkspaceMember{
+  member User @relation(fields: [memberId], references: [id])
+  memberId Int @map("member_id")
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId Int @map("workspace_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  @@id([memberId, workspaceId])
+}
+
+
+model RefreshToken {
+  id Int @id @default(autoincrement())
+  token String
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("refresh_tokens")
+}
+
+
+
+
+
+
+enum TaskStatus {
+  DONE
+  WIP
+  OVERDUE
+  @@map("task_status")
+}
