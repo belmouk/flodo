@@ -1,14 +1,9 @@
 import ApiError from "../lib/ApiError.js";
 import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcrypt";
+import { UserSignup } from "./auth.schema.js";
 
-interface User {
-  username: string;
-  password: string;
-  email: string;
-}
-
-export const createUser = async ({ username, password, email }: User) => {
+export const createUser = async ({ username, password, email }: UserSignup) => {
   const existingUser = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },
   });

@@ -4,7 +4,6 @@ import { validateUserSignup } from "../middleware/user.validation.js";
 
 const router = Router();
 
-router.get("/signup", controller.signup);
-router.post("/signup", validateUserSignup);
+router.post("/signup", validateUserSignup, controller.signup);
 
 export default router;

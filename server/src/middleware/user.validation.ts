@@ -15,7 +15,7 @@ export const validateUserSignup = (
   } else if (!result.success) {
     const errors = z.flattenError(result.error);
     return next(
-      new ApiError("Invalid SignUp data.", 400, "SignupError", errors),
+      new ApiError("Invalid SignUp data.", 400, "InvalidDataError", errors),
     );
   }
 };

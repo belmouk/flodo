@@ -1,7 +1,7 @@
 class ApiError extends Error {
   status: number;
   details: Record<string, any>;
-  type: string;
+  code: string;
   constructor(
     message: string,
     status: number,
@@ -11,7 +11,7 @@ class ApiError extends Error {
     super(message);
     this.status = status;
     this.details = details;
-    this.type = type;
+    this.code = type;
   }
 }
 

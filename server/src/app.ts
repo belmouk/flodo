@@ -1,14 +1,37 @@
 import express from "express";
 import authRouter from "./auth/auth.routes.js";
+import ApiError from "./lib/ApiError.js";
+import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 
 const app = express();
+
+app.use(express.json());
 
 app.get("/", (req, res) => res.send("Hello World"));
 app.use("/auth", authRouter);
 
-const PORT = process.env.PORT || 3000;
+app.use(
+  (
+    err: ErrorRequestHandler,
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    console.error(err);
+    if (err instanceof ApiError) {
+      return res.status(err.status).send({
+        message: err.message,
+        details: err.details,
+        code: err.code,
+      });
+    } else {
+      return res.status(500).send({
+        message: "Oops something went wrong.",
+        details: {},
+        code: "InternalServerError",
+      });
+    }
+  },
+);
 
-app.listen(PORT, (err) => {
-  if (err) console.error(err);
-  console.log(`Server listening on ${PORT}...`);
-});
+export default app;
