@@ -2,10 +2,14 @@ import express from "express";
 import authRouter from "./auth/auth.routes.js";
 import ApiError from "./lib/ApiError.js";
 import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
+import cookieParser from "cookie-parser";
+import helmet from "helmet";
 
 const app = express();
 
+app.use(helmet());
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => res.send("Hello World"));
 app.use("/auth", authRouter);
