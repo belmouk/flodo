@@ -8,68 +8,68 @@ beforeEach(async () => {
 });
 
 describe("POST auth/signup", () => {
-  const [username, email, password] = ["arman", "arman@gmail.com", "123456"];
+  const [firstName, lastName, email, password] = [
+    "arman",
+    "armanito",
+    "arman@gmail.com",
+    "123456",
+  ];
+
+  const capitalize = (name: string) => {
+    return name[0].toUpperCase() + name.slice(1).toLowerCase();
+  };
 
   it("adds a new user", async () => {
     const res = await request(app)
       .post("/auth/signup")
-      .send({ username, email, password });
+      .send({ firstName, lastName, email, password });
 
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ username, email });
+    expect(res.body).toMatchObject({
+      firstName: capitalize(firstName),
+      lastName: capitalize(lastName),
+      email,
+    });
     expect(res.body).not.toHaveProperty("password");
-  });
-
-  it("rejects an existing user", async () => {
-    await prisma.user.create({ data: { username, email, password } });
-
-    const res = await request(app)
-      .post("/auth/signup")
-      .send({ username, email, password })
-      .type("json");
-
-    expect(res.status).toBe(400);
-    expect(res.body).toMatchObject({ code: "UserExistsError" });
   });
 
   it("rejects a bad request", async () => {
     const res = await request(app)
       .post("/auth/signup")
-      .send({ username: "", email: "", password: "" })
+      .send({ firstName: "", lastName: "", email: "", password: "" })
       .type("json");
 
     expect(res.status).toBe(400);
     expect(res.body).toMatchObject({ code: "InvalidDataError" });
   });
 
-  it("rejects an existing username", async () => {
-    await prisma.user.create({ data: { username, password, email } });
+  it("rejects an existing user", async () => {
+    await prisma.user.create({
+      data: { firstName, lastName, email, password },
+    });
 
     const res = await request(app)
       .post("/auth/signup")
-      .send({ username, email: "random@b.com", password });
+      .send({ firstName, lastName, email, password });
 
     expect(res.status).toBe(400);
-    expect(res.body).toMatchObject({ code: "UserExistsError" });
-  });
-
-  it("rejects an existing email", async () => {
-    await prisma.user.create({ data: { username, password, email } });
-
-    const res = await request(app)
-      .post("/auth/signup")
-      .send({ username: "lola", email, password });
-
-    expect(res.status).toBe(400);
-    expect(res.body).toMatchObject({ code: "UserExistsError" });
+    expect(res.body).toMatchObject({ code: "UserAlreadyExists" });
   });
 });
 
 describe("POST auth/login", () => {
-  const [username, email, password] = ["arman", "arman@gmail.com", "123456"];
+  const [firstName, lastName, email, password] = [
+    "arman",
+    "armanito",
+    "arman@gmail.com",
+    "123456",
+  ];
 
   it("logs existing user", async () => {
-    await request(app).post("/auth/signup").send({ username, password, email });
+    await request(app)
+      .post("/auth/signup")
+      .send({ firstName, lastName, password, email });
+
     const res = await request(app)
       .post("/auth/login")
       .send({ email, password });
@@ -87,7 +87,9 @@ describe("POST auth/login", () => {
   });
 
   it("rejects wrong password", async () => {
-    await prisma.user.create({ data: { username, email, password } });
+    await prisma.user.create({
+      data: { firstName, lastName, email, password },
+    });
 
     const res = await request(app)
       .post("/auth/login")
@@ -98,8 +100,13 @@ describe("POST auth/login", () => {
   });
 });
 
-describe.only("POST auth/refresh", () => {
-  const [username, email, password] = ["arman", "arman@gmail.com", "123456"];
+describe("POST auth/refresh", () => {
+  const [firstName, lastName, email, password] = [
+    "arman",
+    "armanito",
+    "arman@gmail.com",
+    "123456",
+  ];
 
   const getJSONCookie = (name: string, cookie: Array<string>) => {
     const raw = cookie.find((c) => c.startsWith(`${name}=`));
@@ -114,7 +121,9 @@ describe.only("POST auth/refresh", () => {
   it("refreshes access and refresh tokens", async () => {
     const agent = request.agent(app);
 
-    await agent.post("/auth/signup").send({ username, email, password });
+    await agent
+      .post("/auth/signup")
+      .send({ firstName, lastName, email, password });
 
     const res1 = await agent.post("/auth/login").send({ email, password });
     const firstCookies = res1.headers["set-cookie"];

@@ -6,28 +6,27 @@ import { jwtVerify, SignJWT } from "jose";
 import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
 
-export const createUser = async ({ username, password, email }: UserSignup) => {
+export const createUser = async ({
+  firstName,
+  lastName,
+  password,
+  email,
+}: UserSignup) => {
   const existingUser = await prisma.user.findFirst({
-    where: { OR: [{ email }, { username }] },
+    where: { email },
   });
   if (existingUser) {
-    const isEmail = existingUser.email === email;
-    throw new ApiError(
-      isEmail ? "Email taken" : "Username taken",
-      400,
-      "UserExistsError",
-      {
-        [isEmail ? "email" : "username"]: {
-          message: "Username or email already exists",
-        },
+    throw new ApiError("Account already exists", 400, "UserAlreadyExists", {
+      email: {
+        message: "Account already exists",
       },
-    );
+    });
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
   return await prisma.user.create({
-    data: { username, email, password: hashedPassword },
+    data: { firstName, lastName, email, password: hashedPassword },
     omit: { password: true },
   });
 };
