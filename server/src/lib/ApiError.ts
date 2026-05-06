@@ -5,13 +5,13 @@ class ApiError extends Error {
   constructor(
     message: string,
     status: number,
-    type: string,
+    code: string,
     details: Record<string, any> = {},
   ) {
     super(message);
     this.status = status;
     this.details = details;
-    this.code = type;
+    this.code = code;
   }
 }
 

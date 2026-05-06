@@ -21,7 +21,7 @@ describe("POST auth/signup", () => {
 
   it("adds a new user", async () => {
     const res = await request(app)
-      .post("/auth/signup")
+      .post("/api/auth/signup")
       .send({ firstName, lastName, email, password });
 
     expect(res.status).toBe(201);
@@ -35,7 +35,7 @@ describe("POST auth/signup", () => {
 
   it("rejects a bad request", async () => {
     const res = await request(app)
-      .post("/auth/signup")
+      .post("/api/auth/signup")
       .send({ firstName: "", lastName: "", email: "", password: "" })
       .type("json");
 
@@ -49,7 +49,7 @@ describe("POST auth/signup", () => {
     });
 
     const res = await request(app)
-      .post("/auth/signup")
+      .post("/api/auth/signup")
       .send({ firstName, lastName, email, password });
 
     expect(res.status).toBe(400);
@@ -67,11 +67,11 @@ describe("POST auth/login", () => {
 
   it("logs existing user", async () => {
     await request(app)
-      .post("/auth/signup")
+      .post("/api/auth/signup")
       .send({ firstName, lastName, password, email });
 
     const res = await request(app)
-      .post("/auth/login")
+      .post("/api/auth/login")
       .send({ email, password });
 
     expect(res.status).toBe(204);
@@ -79,7 +79,7 @@ describe("POST auth/login", () => {
 
   it("rejects non existing user", async () => {
     const res = await request(app)
-      .post("/auth/login")
+      .post("/api/auth/login")
       .send({ email: "random@b.com", password: "randompass" });
 
     expect(res.status).toBe(400);
@@ -92,7 +92,7 @@ describe("POST auth/login", () => {
     });
 
     const res = await request(app)
-      .post("/auth/login")
+      .post("/api/auth/login")
       .send({ email, password: "randompass" });
 
     expect(res.status).toBe(403);
@@ -122,13 +122,13 @@ describe("POST auth/refresh", () => {
     const agent = request.agent(app);
 
     await agent
-      .post("/auth/signup")
+      .post("/api/auth/signup")
       .send({ firstName, lastName, email, password });
 
-    const res1 = await agent.post("/auth/login").send({ email, password });
+    const res1 = await agent.post("/api/auth/login").send({ email, password });
     const firstCookies = res1.headers["set-cookie"];
 
-    const res2 = await agent.post("/auth/refresh").withCredentials();
+    const res2 = await agent.post("/api/auth/refresh");
     const secondCookies = res2.headers["set-cookie"];
 
     const firstAccessToken = getJSONCookie(

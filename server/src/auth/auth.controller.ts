@@ -38,14 +38,14 @@ export const login = async (
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/auth/refresh",
+    path: "/api/auth/refresh",
   });
   res.cookie("accessToken", accessToken, {
     maxAge: 15 * 1000,
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/auth",
+    path: "/api/auth",
   });
 
   return res.sendStatus(204);
@@ -66,14 +66,14 @@ export const refresh = async (
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/auth/refresh",
+    path: "/api/auth/refresh",
   });
   res.cookie("accessToken", accessToken, {
     maxAge: 15 * 1000,
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/auth",
+    path: "/api/auth",
   });
 
   return res.sendStatus(204);

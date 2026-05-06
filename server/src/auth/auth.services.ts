@@ -17,9 +17,7 @@ export const createUser = async ({
   });
   if (existingUser) {
     throw new ApiError("Account already exists", 400, "UserAlreadyExists", {
-      email: {
-        message: "Account already exists",
-      },
+      email: [{ message: "Account already exists" }],
     });
   }
 
@@ -43,7 +41,9 @@ export const verifyLoginCredentials = async ({
   const match = await bcrypt.compare(password, user.password);
 
   if (!match) {
-    throw new ApiError("Wrong password", 403, "WrongPassword");
+    throw new ApiError("Wrong password", 403, "WrongPassword", {
+      password: "Wrong password",
+    });
   }
   return user;
 };

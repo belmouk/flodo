@@ -12,7 +12,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-    proxy: { "/api": "http://localhost:300" },
+    proxy: { "/api": "http://localhost:3000" },
   },
   resolve: {
     alias: {
