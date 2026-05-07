@@ -18,14 +18,10 @@ model User {
   lastName String @map("last_name")
   email String @unique
   password String
-  teamAdmins TeamAdmin[] 
-  teamMemberships TeamMember[]
-  projectOwnerships ProjectOwner[]
-  projectMemberships ProjectMember[]
-  taskAssignments TaskAssignee[]
-  taskOwnerships TaskAssigner[]
-  workspaceOwnerships WorkspaceAdmin[]
-  workspaceMemberships WorkspaceMember[]
+  teamMemberships TeamUser[]
+  projectMemberships ProjectUser[]
+  taskStakes TaskUser[]
+  workspaceMemberships WorkspaceUser[]
   token RefreshToken?
 
   @@map("users")
@@ -34,29 +30,25 @@ model User {
 model Team {
   id Int @id @default(autoincrement())
   name String
-  admins TeamAdmin[]
-  members TeamMember[]
+  members TeamUser[]
   workspaces Workspace[] 
 
   @@map("teams")
 }
 
-model TeamAdmin {
+model TeamUser {
   team Team @relation(fields: [teamId], references: [id])
   teamId Int @map("team_id")
-  admin User @relation(fields: [adminId], references: [id])
-  adminId Int @map("admin_id")
+  user User @relation(fields: [userId], references: [id])
+  userId Int @map("user_id")
+  userRole TeamUserRole
   assignedAt DateTime @default(now()) @map("assigned_at")
-  @@id([adminId, teamId])
+  @@id([userId, teamId])
 }
 
-model TeamMember {
-  team Team @relation(fields: [teamId], references: [id])
-  teamId Int @map("team_id")
-  member User @relation(fields: [memberId], references: [id])
-  memberId Int @map("member_id")
-  joinedAt DateTime @default(now()) @map("joined_at")
-  @@id([memberId, teamId])
+enum TeamUserRole {
+  ADMIN
+  MEMBER
 }
 
 model Project {
@@ -64,27 +56,23 @@ model Project {
   name String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @map("updated_at")
-  owners ProjectOwner[]
-  members ProjectMember[]
+  members ProjectUser[]
   @@map("projects")
 }
 
-model ProjectOwner {
-  owner User @relation(fields: [ownerId], references: [id])
-  ownerId Int @map("owner_id")
+model ProjectUser {
+  user User @relation(fields: [userId], references: [id])
+  userId Int @map("user_id")
   project Project @relation(fields: [projectId], references: [id])
   projectId Int @map("project_id")
   assignedAt DateTime @default(now()) @map("assigned_at")
-  @@id([ownerId, projectId])
+  userRole ProjectUserRole
+  @@id([userId, projectId])
 }
 
-model ProjectMember {
-  member User @relation(fields: [memberId], references: [id])
-  memberId Int @map("member_id")
-  project Project @relation(fields: [projectId], references: [id])
-  projectId Int @map("project_id")
-  joinedAt DateTime @default(now()) @map("joined_at")
-  @@id([memberId, projectId])
+enum ProjectUserRole {
+  OWNER
+  MEMBER
 }
 
 model Task {
@@ -94,59 +82,57 @@ model Task {
   dueAt DateTime @map("due_at")
   createdAt DateTime @default(now()) @map("created_at")
   completedAt DateTime @map("completed_at")
-  assigners TaskAssigner[]
-  assignees TaskAssignee[]
+  stakeholders TaskUser[]
   @@map("tasks")
 }
 
-model TaskAssigner {
-  assigner User @relation(fields: [assignerId], references: [id])
-  assignerId Int @map("assigned_id")
-  task Task @relation(fields: [taskId], references: [id])
-  taskId Int @map("task_id")
-  @@id([assignerId, taskId])
+enum TaskStatus {
+  DONE
+  WIP
+  OVERDUE
+  @@map("task_status")
 }
 
-model TaskAssignee {
-  assignee User @relation(fields: [assigneeId], references: [id])
-  assigneeId Int @map("assigned_id")
+model TaskUser {
+  stakeholder User @relation(fields: [stakeholderId], references: [id])
+  stakeholderId Int @map("stakeholder_id")
   task Task @relation(fields: [taskId], references: [id])
   taskId Int @map("task_id")
   assignedAt DateTime @default(now()) @map("assigned_at")
-  @@id([assigneeId, taskId])
+  userRole TaskUserRole
+  @@id([stakeholderId, taskId])
+}
+
+enum TaskUserRole {
+  ASSIGNER
+  ASSIGNEE
 }
 
 model Workspace {
   id Int @id @default(autoincrement())
   name String
   createdAt DateTime @default(now()) @map("created_at")
-  admins WorkspaceAdmin[]
-  members WorkspaceMember[]
+  members WorkspaceUser[]
   team Team? @relation(fields: [teamId], references: [id])
-  teamId Int @map("team_id")
+  teamId Int? @map("team_id")
 
   @@map("workspaces")
 }
 
-model WorkspaceAdmin {
-  admin User @relation(fields: [adminId], references: [id])
-  adminId Int @map("admin_id")
+model WorkspaceUser {
+  user User @relation(fields: [userId], references: [id])
+  userId Int @map("user_id")
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   workspaceId Int @map("workspace_id")
   assignedAt DateTime @default(now()) @map("assigned_at")
-  @@id([adminId, workspaceId])
+  userRole WorkspaceUserRole
+  @@id([userId, workspaceId])
 }
 
-model WorkspaceMember{
-  member User @relation(fields: [memberId], references: [id])
-  memberId Int @map("member_id")
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  workspaceId Int @map("workspace_id")
-  joinedAt DateTime @default(now()) @map("joined_at")
-
-  @@id([memberId, workspaceId])
+enum WorkspaceUserRole {
+  ADMIN
+  MEMBER
 }
-
 
 model RefreshToken {
   id Int @id @default(autoincrement())
@@ -160,13 +146,3 @@ model RefreshToken {
 }
 
 
-
-
-
-
-enum TaskStatus {
-  DONE
-  WIP
-  OVERDUE
-  @@map("task_status")
-}

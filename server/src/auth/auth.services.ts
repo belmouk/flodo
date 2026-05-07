@@ -2,9 +2,10 @@ import ApiError from "../lib/ApiError.js";
 import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcrypt";
 import { UserLogin, UserSignup } from "./auth.schema.js";
-import { jwtVerify, SignJWT } from "jose";
+import { jwtVerify, SignJWT, errors } from "jose";
 import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
+import { RefreshToken } from "../prisma/client.js";
 
 export const createUser = async ({
   firstName,
@@ -48,25 +49,12 @@ export const verifyLoginCredentials = async ({
   return user;
 };
 
-export const generateJWT = async ({
-  userId,
-  secret,
-  payload,
-  type,
-}: {
-  userId: number;
-  secret: string;
-  payload: Record<string, any>;
-  type: "access" | "refresh";
-}) => {
-  const encodedSecret = new TextEncoder().encode(secret);
+export const createAccessToken = async (userId: number) => {
+  const encodedSecret = new TextEncoder().encode(CONFIG.ACCESS_TOKEN_SECRET);
   const jti = randomUUID();
-  const expiresAt =
-    type === "access"
-      ? new Date(Date.now() + 15 * 60 * 1000)
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-  const token = await new SignJWT(payload)
+  const token = await new SignJWT()
     .setSubject(userId.toString())
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -76,7 +64,25 @@ export const generateJWT = async ({
     .setJti(jti)
     .sign(encodedSecret);
 
-  return { token, jti, expiresAt };
+  return token;
+};
+
+export const createRefreshToken = async (userId: number) => {
+  const encodedSecret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
+  const jti = randomUUID();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  const token = await new SignJWT()
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(expiresAt)
+    .setAudience(CONFIG.JWT_AUDIENCE)
+    .setIssuer(CONFIG.JWT_ISSUER)
+    .setJti(jti)
+    .sign(encodedSecret);
+
+  await saveRefreshToken({ userId, refreshToken: { jti, expiresAt, token } });
+  return token;
 };
 
 export const saveRefreshToken = async ({
@@ -94,54 +100,53 @@ export const saveRefreshToken = async ({
   });
 };
 
-export const refreshTokens = async (refreshToken: {
-  token: string;
-  jti: string;
-  expiresAt: Date;
-}) => {
-  const token = await prisma.refreshToken.findFirst({
-    where: { jti: refreshToken.jti },
-  });
-  if (!token) throw new ApiError("Invalid token", 401, "MissingToken");
-  if (new Date(token.expiresAt) < new Date(Date.now())) {
-    await prisma.refreshToken.deleteMany({ where: { id: token.id } });
-    throw new ApiError("Expired token", 401, "ExpiredToken");
+export const createNewTokens = async (refreshToken: RefreshToken) => {
+  const [newAccessToken, newRefreshToken] = await Promise.all([
+    createAccessToken(refreshToken.userId),
+    createRefreshToken(refreshToken.userId),
+  ]);
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+};
+
+export const validateRefreshToken = async (token: string) => {
+  try {
+    const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
+    const { payload } = await jwtVerify(token, secret, {
+      issuer: CONFIG.JWT_ISSUER,
+      audience: CONFIG.JWT_AUDIENCE,
+    });
+    const refreshToken = await prisma.refreshToken.findFirst({
+      where: { jti: payload.jti },
+    });
+    if (!refreshToken)
+      throw new ApiError("Invalid token", 401, "InvalidRefreshToken");
+    if (new Date(refreshToken.expiresAt) < new Date(Date.now())) {
+      await prisma.refreshToken.deleteMany({ where: { id: refreshToken.id } });
+      throw new ApiError("Expired token", 401, "ExpiredRefreshToken");
+    }
+    return refreshToken;
+  } catch (error) {
+    if (error instanceof errors.JWTExpired) {
+      throw new ApiError("Expired Access Token", 401, "ExpiredRefreshToken");
+    }
+    if (error instanceof errors.JWTInvalid) {
+      throw new ApiError("Invalid Access Token", 401, "InvalidRefreshToken");
+    }
+    throw error;
   }
+};
 
-  const jwtRefreshSecret = new TextEncoder().encode(
-    CONFIG.REFRESH_TOKEN_SECRET,
-  );
-  const { payload } = await jwtVerify(token.token, jwtRefreshSecret, {
-    issuer: CONFIG.JWT_ISSUER,
-    audience: CONFIG.JWT_AUDIENCE,
-  });
-
-  if (typeof payload.sub === "string") {
-    const userId = parseInt(payload.sub, 10);
-    const newRefreshToken = await generateJWT({
-      userId,
-      secret: CONFIG.REFRESH_TOKEN_SECRET,
-      payload: {},
-      type: "refresh",
+export const deleteRefreshToken = async (token: string) => {
+  try {
+    const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
+    const { payload } = await jwtVerify(token, secret, {
+      issuer: CONFIG.JWT_ISSUER,
+      audience: CONFIG.JWT_AUDIENCE,
     });
-    const newAccessToken = await generateJWT({
-      userId,
-      secret: CONFIG.ACCESS_TOKEN_SECRET,
-      payload: {},
-      type: "access",
-    });
-
-    await prisma.refreshToken.update({
-      data: {
-        token: newRefreshToken.token,
-        jti: newRefreshToken.jti,
-        expiresAt: newRefreshToken.expiresAt,
-      },
-      where: { id: token.id },
-    });
-
-    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-  } else {
-    throw new ApiError("Error parsing JWT payload", 500, "JWTParsing");
+    await prisma.refreshToken.deleteMany({ where: { jti: payload.jti } });
+  } catch (error) {
+    if (error instanceof errors.JOSEError) return;
+    throw error;
   }
 };

@@ -1,11 +1,18 @@
 import request from "supertest";
 import app from "../app.js";
 import { prisma } from "../lib/prisma.js";
+import { createUser } from "./auth.services.js";
+import { CookieAccessInfo } from "cookiejar";
 
-beforeEach(async () => {
-  await prisma.refreshToken.deleteMany();
-  await prisma.user.deleteMany();
-});
+beforeEach(
+  async () =>
+    await prisma.$transaction([
+      prisma.workspaceUser.deleteMany(),
+      prisma.workspace.deleteMany(),
+      prisma.refreshToken.deleteMany(),
+      prisma.user.deleteMany(),
+    ]),
+);
 
 describe("POST auth/signup", () => {
   const [firstName, lastName, email, password] = [
@@ -36,8 +43,7 @@ describe("POST auth/signup", () => {
   it("rejects a bad request", async () => {
     const res = await request(app)
       .post("/api/auth/signup")
-      .send({ firstName: "", lastName: "", email: "", password: "" })
-      .type("json");
+      .send({ firstName: "", lastName: "", email: "", password: "" });
 
     expect(res.status).toBe(400);
     expect(res.body).toMatchObject({ code: "InvalidDataError" });
@@ -108,16 +114,6 @@ describe("POST auth/refresh", () => {
     "123456",
   ];
 
-  const getJSONCookie = (name: string, cookie: Array<string>) => {
-    const raw = cookie.find((c) => c.startsWith(`${name}=`));
-    if (!raw) return null;
-    let value = raw.split(";")[0].split("=")[1];
-    if (value) {
-      value = decodeURIComponent(value).substring(2);
-    }
-    return JSON.parse(value);
-  };
-
   it("refreshes access and refresh tokens", async () => {
     const agent = request.agent(app);
 
@@ -125,31 +121,84 @@ describe("POST auth/refresh", () => {
       .post("/api/auth/signup")
       .send({ firstName, lastName, email, password });
 
-    const res1 = await agent.post("/api/auth/login").send({ email, password });
-    const firstCookies = res1.headers["set-cookie"];
-
-    const res2 = await agent.post("/api/auth/refresh");
-    const secondCookies = res2.headers["set-cookie"];
-
-    const firstAccessToken = getJSONCookie(
+    await agent.post("/api/auth/login").send({ email, password });
+    const firstAccessToken = agent.jar.getCookie(
       "accessToken",
-      Array.isArray(firstCookies) ? firstCookies : [],
+      CookieAccessInfo.All,
     );
-    const firstRefreshToken = getJSONCookie(
+    const firstRefreshToken = agent.jar.getCookie(
       "refreshToken",
-      Array.isArray(firstCookies) ? firstCookies : [],
+      CookieAccessInfo.All,
     );
 
-    const secondAccessToken = getJSONCookie(
+    await agent.post("/api/auth/refresh");
+    const secondAccessToken = agent.jar.getCookie(
       "accessToken",
-      Array.isArray(secondCookies) ? secondCookies : [],
+      CookieAccessInfo.All,
     );
-    const secondRefreshToken = getJSONCookie(
+    const secondRefreshToken = agent.jar.getCookie(
       "refreshToken",
-      Array.isArray(secondCookies) ? secondCookies : [],
+      CookieAccessInfo.All,
     );
 
-    expect(secondAccessToken.token).not.toBe(firstAccessToken.token);
-    expect(secondRefreshToken.token).not.toBe(firstRefreshToken.token);
+    expect(secondAccessToken).not.toBe(firstAccessToken);
+    expect(secondRefreshToken).not.toBe(firstRefreshToken);
   });
+});
+
+describe("protected routes", () => {
+  it("rejects unauthenticated users", async () => {
+    const agent = request.agent(app);
+    const res = await agent.get("/api/workspaces");
+    expect(res.body).toMatchObject({ code: "MissingAccessToken" });
+  });
+  it("accepts authenticated users", async () => {
+    const [firstName, lastName, email, password] = [
+      "arman",
+      "armanito",
+      "arman@gmail.com",
+      "123456",
+    ];
+    const agent = request.agent(app);
+    await agent
+      .post("/api/auth/signup")
+      .send({ firstName, lastName, email, password });
+
+    await agent.post("/api/auth/login").send({ email, password });
+
+    const workspace = await prisma.workspace.create({
+      data: { name: "hello" },
+      select: { name: true, id: true },
+    });
+
+    const res = await agent.get("/api/workspaces");
+    expect(res.status).toBe(200);
+    expect(res.body[0]).toMatchObject(workspace);
+  });
+});
+
+it("POST auth/logout", async () => {
+  const userData = {
+    firstName: "arman",
+    lastName: "armanito",
+    email: "arman@gmail.com",
+    password: "123456",
+  };
+
+  await createUser(userData);
+
+  const agent = request.agent(app);
+
+  await agent
+    .post("/api/auth/login")
+    .send({ email: userData.email, password: userData.password });
+
+  await agent.post("/api/auth/logout");
+
+  expect(
+    agent.jar.getCookie("refreshToken", CookieAccessInfo.All),
+  ).toBeUndefined();
+  expect(
+    agent.jar.getCookie("accessToken", CookieAccessInfo.All),
+  ).toBeUndefined();
 });

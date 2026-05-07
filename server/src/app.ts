@@ -4,6 +4,8 @@ import ApiError from "./lib/ApiError.js";
 import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import ensureAuth from "./middleware/ensureAuth.js";
+import workspacesRouter from "./workspaces/workspaces.routes.js";
 
 const app = express();
 
@@ -13,6 +15,8 @@ app.use(cookieParser());
 
 app.get("/", (req, res) => res.send("Hello World"));
 app.use("/api/auth", authRouter);
+app.use(ensureAuth);
+app.use("/api/workspaces", workspacesRouter);
 
 app.use(
   (
