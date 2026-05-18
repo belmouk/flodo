@@ -53,3 +53,13 @@ export const destroy = async (workspaceId: number) => {
     prisma.workspace.deleteMany({ where: { id: workspaceId } }),
   ]);
 };
+
+export const isWorkspaceMember = async (
+  userId: number,
+  workspaceId: number,
+) => {
+  const record = await prisma.workspaceUser.findFirst({
+    where: { userId, workspaceId },
+  });
+  return record ? true : false;
+};

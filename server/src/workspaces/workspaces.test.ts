@@ -35,6 +35,8 @@ const user2Data = {
 beforeEach(async () => {
   await prisma.$transaction([
     prisma.workspaceUser.deleteMany(),
+    prisma.projectUser.deleteMany(),
+    prisma.project.deleteMany(),
     prisma.workspace.deleteMany(),
     prisma.refreshToken.deleteMany(),
     prisma.user.deleteMany(),
