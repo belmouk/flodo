@@ -17,9 +17,8 @@ export const ensureAuth = async (
         issuer: CONFIG.JWT_ISSUER,
         audience: CONFIG.JWT_AUDIENCE,
       });
-
       if (payload.sub) {
-        req.body = { ...req.body, userId: parseInt(payload.sub, 10) };
+        req.userId = parseInt(payload.sub, 10);
         return next();
       } else {
         throw new ApiError("Invalid Access Token", 401, "InvalidAccessToken");

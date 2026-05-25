@@ -1,11 +1,15 @@
 import { prisma } from "../lib/prisma.js";
 
-export const getWorkSpaces = async () => {
-  return await prisma.workspace.findMany();
+export const getWorkSpaces = async (userId: number) => {
+  return await prisma.workspace.findMany({
+    where: { members: { some: { userId } } },
+  });
 };
 
-export const getWorkspace = async (id: number) => {
-  return await prisma.workspace.findFirst({ where: { id } });
+export const getWorkspace = async (id: number, userId: number) => {
+  return await prisma.workspace.findUnique({
+    where: { id, members: { some: { userId } } },
+  });
 };
 
 export const create = async ({
@@ -23,15 +27,25 @@ export const create = async ({
   return workspace;
 };
 
-export const update = async ({ name, id }: { name: string; id: number }) => {
-  const workspace = await prisma.workspace.findFirst({ where: { id } });
+export const update = async ({
+  name,
+  id,
+  userId,
+}: {
+  name: string;
+  id: number;
+  userId: number;
+}) => {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id },
+  });
   if (!workspace) return;
   return await prisma.workspace.update({ where: { id }, data: { name } });
 };
 
 export const hasUpdateRights = async (userId: number, workspaceId: number) => {
-  const user = await prisma.workspaceUser.findFirst({
-    where: { workspaceId, userId },
+  const user = await prisma.workspaceUser.findUnique({
+    where: { userId_workspaceId: { workspaceId, userId } },
   });
   if (!user) return false;
   if (user.userRole === "MEMBER") return false;
@@ -39,8 +53,8 @@ export const hasUpdateRights = async (userId: number, workspaceId: number) => {
 };
 
 export const hasDeleteRights = async (userId: number, workspaceId: number) => {
-  const user = await prisma.workspaceUser.findFirst({
-    where: { workspaceId, userId },
+  const user = await prisma.workspaceUser.findUnique({
+    where: { userId_workspaceId: { workspaceId, userId } },
   });
   if (!user) return false;
   if (user.userRole === "MEMBER") return false;
@@ -58,8 +72,8 @@ export const isWorkspaceMember = async (
   userId: number,
   workspaceId: number,
 ) => {
-  const record = await prisma.workspaceUser.findFirst({
-    where: { userId, workspaceId },
+  const record = await prisma.workspaceUser.findUnique({
+    where: { userId_workspaceId: { userId, workspaceId } },
   });
   return record ? true : false;
 };

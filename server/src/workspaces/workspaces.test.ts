@@ -44,23 +44,36 @@ beforeEach(async () => {
 });
 
 it("GET workspaces", async () => {
-  await prisma.workspace.createMany({
-    data: [{ name: "hello world" }, { name: "bye world" }],
-  });
-  const workspaces = await prisma.workspace.findMany({
-    orderBy: { id: "asc" },
-    select: { id: true, name: true },
+  const user = await createUser(user1Data);
+
+  await prisma.$transaction(async (tx) => {
+    const createdWorkspaces = await tx.workspace.createManyAndReturn({
+      data: [{ name: "hello world" }, { name: "bye world" }],
+      select: { id: true },
+    });
+    await tx.workspaceUser.createMany({
+      data: createdWorkspaces.map((w) => ({
+        userId: user.id,
+        workspaceId: w.id,
+        userRole: "ADMIN",
+      })),
+    });
   });
 
-  const user = await createUser(user1Data);
+  const expectedWorkspaces = await prisma.workspace.findMany({
+    orderBy: { id: "asc" },
+    select: { id: true, name: true },
+    where: { members: { some: { userId: user.id } } },
+  });
+
   const cookies = await getAuthCookies(user);
 
   const res = await request(app).get("/api/workspaces").set("Cookie", cookies);
 
   expect(res.status).toBe(200);
-  expect(res.body).toHaveLength(2);
-  expect(res.body[0]).toMatchObject(workspaces[0]);
-  expect(res.body[1]).toMatchObject(workspaces[1]);
+  expect(res.body).toHaveLength(expectedWorkspaces.length);
+  expect(res.body[0]).toMatchObject(expectedWorkspaces[0]);
+  expect(res.body[1]).toMatchObject(expectedWorkspaces[1]);
 });
 
 it("POST workplaces", async () => {
@@ -80,9 +93,18 @@ it("POST workplaces", async () => {
 describe("PUT workplaces", () => {
   it("accepts if admin", async () => {
     const admin = await createUser(user1Data);
-    const workspace = await prisma.workspace.create({ data: { name: "fizz" } });
-    await prisma.workspaceUser.create({
-      data: { userId: admin.id, userRole: "ADMIN", workspaceId: workspace.id },
+
+    const workspace = await prisma.$transaction(async (tx) => {
+      const ws = await tx.workspace.create({ data: { name: "fizz" } });
+
+      await tx.workspaceUser.create({
+        data: {
+          userId: admin.id,
+          userRole: "ADMIN",
+          workspaceId: ws.id,
+        },
+      });
+      return ws;
     });
 
     const cookies = await getAuthCookies(admin);
@@ -97,14 +119,20 @@ describe("PUT workplaces", () => {
   });
 
   it("rejects if member", async () => {
-    const admin = await prisma.user.create({ data: user1Data });
-    const member = await prisma.user.create({ data: user2Data });
-    const workspace = await prisma.workspace.create({ data: { name: "hey" } });
-    await prisma.workspaceUser.createMany({
-      data: [
-        { userId: admin.id, workspaceId: workspace.id, userRole: "ADMIN" },
-        { userId: member.id, workspaceId: workspace.id, userRole: "MEMBER" },
-      ],
+    const [admin, member] = await Promise.all([
+      prisma.user.create({ data: user1Data }),
+      prisma.user.create({ data: user2Data }),
+    ]);
+
+    const workspace = await prisma.$transaction(async (tx) => {
+      const ws = await tx.workspace.create({ data: { name: "hey" } });
+      await tx.workspaceUser.createMany({
+        data: [
+          { userId: admin.id, workspaceId: ws.id, userRole: "ADMIN" },
+          { userId: member.id, workspaceId: ws.id, userRole: "MEMBER" },
+        ],
+      });
+      return ws;
     });
 
     const cookies = await getAuthCookies(member);
@@ -116,6 +144,11 @@ describe("PUT workplaces", () => {
 
     expect(res2.status).toBe(403);
     expect(res2.body).toMatchObject({ code: "UnAuthorizedUser" });
+
+    const expectedWorkspace = await prisma.workspace.findUnique({
+      where: { id: workspace.id },
+    });
+    expect(expectedWorkspace).toMatchObject({ name: "hey" });
   });
 });
 
@@ -123,9 +156,12 @@ describe("DELETE workplaces", () => {
   it("accepts if admin", async () => {
     const admin = await createUser(user1Data);
 
-    const workspace = await prisma.workspace.create({ data: { name: "fuzz" } });
-    await prisma.workspaceUser.create({
-      data: { userId: admin.id, workspaceId: workspace.id, userRole: "ADMIN" },
+    const workspace = await prisma.$transaction(async (tx) => {
+      const ws = await tx.workspace.create({ data: { name: "fuzz" } });
+      await tx.workspaceUser.create({
+        data: { userId: admin.id, workspaceId: ws.id, userRole: "ADMIN" },
+      });
+      return ws;
     });
 
     const cookies = await getAuthCookies(admin);
@@ -135,25 +171,33 @@ describe("DELETE workplaces", () => {
       .set("Cookie", cookies);
 
     expect(res.status).toBe(204);
-    expect(
-      await prisma.workspace.findFirst({ where: { id: workspace.id } }),
-    ).toBeNull();
-    expect(
-      await prisma.workspaceUser.findFirst({
-        where: { workspaceId: workspace.id },
+    const [deletedWorkspace, deletedWorkspaceUser] = await Promise.all([
+      prisma.workspace.findUnique({ where: { id: workspace.id } }),
+      prisma.workspaceUser.findUnique({
+        where: {
+          userId_workspaceId: { workspaceId: workspace.id, userId: admin.id },
+        },
       }),
-    ).toBeNull();
+    ]);
+    expect(deletedWorkspace).toBeNull();
+    expect(deletedWorkspaceUser).toBeNull();
   });
 
   it("rejects if member", async () => {
-    const admin = await prisma.user.create({ data: user1Data });
-    const member = await prisma.user.create({ data: user2Data });
-    const workspace = await prisma.workspace.create({ data: { name: "hey" } });
-    await prisma.workspaceUser.createMany({
-      data: [
-        { userId: admin.id, workspaceId: workspace.id, userRole: "ADMIN" },
-        { userId: member.id, workspaceId: workspace.id, userRole: "MEMBER" },
-      ],
+    const [admin, member] = await Promise.all([
+      prisma.user.create({ data: user1Data }),
+      prisma.user.create({ data: user2Data }),
+    ]);
+
+    const workspace = await prisma.$transaction(async (tx) => {
+      const ws = await tx.workspace.create({ data: { name: "hey" } });
+      await tx.workspaceUser.createMany({
+        data: [
+          { userId: admin.id, workspaceId: ws.id, userRole: "ADMIN" },
+          { userId: member.id, workspaceId: ws.id, userRole: "MEMBER" },
+        ],
+      });
+      return ws;
     });
 
     const cookies = await getAuthCookies(member);
@@ -164,5 +208,10 @@ describe("DELETE workplaces", () => {
 
     expect(res.status).toBe(403);
     expect(res.body).toMatchObject({ code: "UnAuthorizedUser" });
+
+    const expectedWorkspace = await prisma.workspace.findUnique({
+      where: { id: workspace.id },
+    });
+    expect(expectedWorkspace).toMatchObject({ name: "hey" });
   });
 });

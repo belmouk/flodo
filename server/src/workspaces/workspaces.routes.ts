@@ -1,7 +1,6 @@
 import { Router } from "express";
 import * as controller from "./workspaces.controller.js";
 import projectsRouter from "../projects/projects.routes.js";
-import { validateHeaderName } from "node:http";
 
 const router = Router();
 

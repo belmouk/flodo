@@ -10,8 +10,13 @@ export const index = async (workspaceId: number) => {
   });
 };
 
-export const show = async (id: number): Promise<Result<Project>> => {
-  const result = await prisma.project.findFirst({ where: { id } });
+export const show = async (
+  id: number,
+  workspaceId: number,
+): Promise<Result<Project>> => {
+  const result = await prisma.project.findUnique({
+    where: { id, workspaceId },
+  });
   if (result) {
     return { success: true, data: result };
   } else {

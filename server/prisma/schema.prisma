@@ -20,7 +20,8 @@ model User {
   password String
   teamMemberships TeamUser[]
   projectMemberships ProjectUser[]
-  taskStakes TaskUser[]
+  tasksToDo Task[] @relation("taskAssignee")
+  tasksToReview Task[] @relation("taskAssigner")
   workspaceMemberships WorkspaceUser[]
   token RefreshToken?
 
@@ -51,66 +52,6 @@ enum TeamUserRole {
   MEMBER
 }
 
-model Project {
-  id Int @id @default(autoincrement())
-  name String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @map("updated_at")
-  members ProjectUser[]
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  workspaceId Int @map("workspace_id")
-  
-  @@map("projects")
-}
-
-model ProjectUser {
-  user User @relation(fields: [userId], references: [id])
-  userId Int @map("user_id")
-  project Project @relation(fields: [projectId], references: [id])
-  projectId Int @map("project_id")
-  assignedAt DateTime @default(now()) @map("assigned_at")
-  userRole ProjectUserRole
-  @@id([userId, projectId])
-}
-
-enum ProjectUserRole {
-  OWNER
-  MEMBER
-}
-
-model Task {
-  id Int @id @default(autoincrement())
-  content String
-  status TaskStatus @default(WIP)
-  dueAt DateTime @map("due_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  completedAt DateTime @map("completed_at")
-  stakeholders TaskUser[]
-  @@map("tasks")
-}
-
-enum TaskStatus {
-  DONE
-  WIP
-  OVERDUE
-  @@map("task_status")
-}
-
-model TaskUser {
-  stakeholder User @relation(fields: [stakeholderId], references: [id])
-  stakeholderId Int @map("stakeholder_id")
-  task Task @relation(fields: [taskId], references: [id])
-  taskId Int @map("task_id")
-  assignedAt DateTime @default(now()) @map("assigned_at")
-  userRole TaskUserRole
-  @@id([stakeholderId, taskId])
-}
-
-enum TaskUserRole {
-  ASSIGNER
-  ASSIGNEE
-}
-
 model Workspace {
   id Int @id @default(autoincrement())
   name String
@@ -138,6 +79,62 @@ enum WorkspaceUserRole {
   MEMBER
 }
 
+model Project {
+  id Int @id @default(autoincrement())
+  name String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  members ProjectUser[]
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId Int @map("workspace_id")
+  tasks Task[]
+  
+  @@map("projects")
+}
+
+model ProjectUser {
+  user User @relation(fields: [userId], references: [id])
+  userId Int @map("user_id")
+  project Project @relation(fields: [projectId], references: [id])
+  projectId Int @map("project_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  userRole ProjectUserRole
+  @@id([userId, projectId])
+}
+
+enum ProjectUserRole {
+  OWNER
+  MEMBER
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+  content String
+  status TaskStatus @default(WIP)
+  dueAt DateTime @map("due_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+  assigner User @relation("taskAssigner",fields: [assignerId], references: [id])
+  assignerId Int @map("assigner_id")
+  assignee User @relation("taskAssignee", fields: [assigneeId], references: [id])
+  assigneeId Int @map("assignee_id")
+  project Project @relation(fields: [projectId], references: [id])
+  projectId Int @map("project_id")
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  DONE
+  WIP
+  OVERDUE
+  @@map("task_status")
+}
+
+enum TaskUserRole {
+  ASSIGNER
+  ASSIGNEE
+}
+
 model RefreshToken {
   id Int @id @default(autoincrement())
   token String
@@ -148,5 +145,3 @@ model RefreshToken {
   userId Int @unique
   @@map("refresh_tokens")
 }
-
-

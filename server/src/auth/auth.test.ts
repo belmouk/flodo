@@ -162,15 +162,20 @@ describe("protected routes", () => {
       "123456",
     ];
     const agent = request.agent(app);
-    await agent
+    const res1 = await agent
       .post("/api/auth/signup")
       .send({ firstName, lastName, email, password });
 
     await agent.post("/api/auth/login").send({ email, password });
-
-    const workspace = await prisma.workspace.create({
-      data: { name: "hello" },
-      select: { name: true, id: true },
+    const workspace = await prisma.$transaction(async (tx) => {
+      const ws = await tx.workspace.create({
+        data: { name: "hello" },
+        select: { name: true, id: true },
+      });
+      await tx.workspaceUser.create({
+        data: { userId: res1.body.id, workspaceId: ws.id, userRole: "ADMIN" },
+      });
+      return ws;
     });
 
     const res = await agent.get("/api/workspaces");

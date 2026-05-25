@@ -90,10 +90,10 @@ describe("projects bad routes", () => {
 });
 
 it("rejects letters in projectId", async () => {
-  const { member } = await seedDB();
+  const { member, workspace } = await seedDB();
   const cookies = await getAuthCookies(member);
   const res = await request(app)
-    .get("/api/workspaces/lol/projects/lol")
+    .get(`/api/workspaces/${workspace.id}/projects/lol`)
     .set("Cookie", cookies);
 
   expect(res.status).toBe(400);
