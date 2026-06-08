@@ -87,7 +87,7 @@ model Project {
   members ProjectUser[]
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   workspaceId Int @map("workspace_id")
-  tasks Task[]
+  lists List[]
   
   @@map("projects")
 }
@@ -107,6 +107,16 @@ enum ProjectUserRole {
   MEMBER
 }
 
+model List {
+  id Int @id @default(autoincrement())
+  name String
+  tasks Task[]
+  project Project @relation(fields: [projectId], references: [id])
+  projectId Int @map("project_id")
+
+  @@map("lists")
+}
+
 model Task {
   id Int @id @default(autoincrement())
   content String
@@ -118,8 +128,9 @@ model Task {
   assignerId Int @map("assigner_id")
   assignee User @relation("taskAssignee", fields: [assigneeId], references: [id])
   assigneeId Int @map("assignee_id")
-  project Project @relation(fields: [projectId], references: [id])
-  projectId Int @map("project_id")
+  list List @relation(fields: [listId], references: [id])
+  listId Int @map("list_id")
+  
   @@map("tasks")
 }
 
