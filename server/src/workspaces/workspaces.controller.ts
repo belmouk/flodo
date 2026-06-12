@@ -9,12 +9,8 @@ export const index = async (req: Request, res: Response) => {
   return res.json(workspaces);
 };
 
-export const show = async (
-  req: Request<{ workspaceId: string }, any, any>,
-  res: Response,
-) => {
-  const id = parseInt(req.params.workspaceId, 10);
-  const workspace = await services.getWorkspace(id, req.userId);
+export const show = async (req: Request, res: Response) => {
+  const workspace = await services.getWorkspace(req.workspaceId, req.userId);
   if (!workspace)
     throw new ApiError(
       "Workspace does not exist",
@@ -36,47 +32,41 @@ export const create = async (
 };
 
 export const update = async (
-  req: Request<{ workspaceId: string }, any, { name: string }>,
+  req: Request<any, any, { name: string }>,
   res: Response,
 ) => {
-  const workspaceId = parseInt(req.params.workspaceId, 10);
   const hasUpdateRights = await services.hasUpdateRights(
     req.userId,
-    workspaceId,
+    req.workspaceId,
   );
   if (!hasUpdateRights)
     throw new ApiError("Action not permitted.", 403, "UnAuthorizedUser");
   const workspace = await services.update({
     name: req.body.name,
-    id: workspaceId,
+    id: req.workspaceId,
     userId: req.userId,
   });
   return res.json(workspace);
 };
 
-export const destroy = async (
-  req: Request<{ workspaceId: string }, any, any>,
-  res: Response,
-) => {
-  const workspaceId = parseInt(req.params.workspaceId, 10);
+export const destroy = async (req: Request, res: Response) => {
   const hasDeleteRights = await services.hasDeleteRights(
     req.userId,
-    workspaceId,
+    req.workspaceId,
   );
   if (!hasDeleteRights) {
     throw new ApiError("Action not permitted.", 403, "UnAuthorizedUser");
   }
-  await services.destroy(workspaceId);
+  await services.destroy(req.workspaceId);
   return res.sendStatus(204);
 };
 
 export const ensureWorkspaceMembership = async (
-  req: Request<{ workspaceId: string }, any, any>,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const workspaceId = parseInt(req.params.workspaceId, 10);
-  if (await services.isWorkspaceMember(req.userId, workspaceId)) {
+  if (await services.isWorkspaceMember(req.userId, req.workspaceId)) {
     next();
   } else {
     throw new ApiError("Resource not accessible", 403, "UnAuthorizedAccess");
@@ -87,14 +77,15 @@ export const validateWorkspaceRoute = async (
   req: Request,
   res: Response,
   next: NextFunction,
+  workspaceId: string,
 ) => {
-  const ParamsSchema = z.object({
-    workspaceId: z.coerce.number().int().positive(),
-  });
-  const result = ParamsSchema.safeParse(req.params);
+  const schema = z.coerce.number().int().positive();
+
+  const result = schema.safeParse(workspaceId);
   if (!result.success) {
     throw new ApiError("Invalid route params", 400, "InvalidRouteParams");
   }
+  req.workspaceId = result.data;
   return next();
 };
 
@@ -121,4 +112,5 @@ export const validateWorkspaceInput = (
     );
   }
   req.body = result.data;
+  return next();
 };

@@ -1,24 +1,17 @@
 import { Router } from "express";
 import * as controller from "./projects.controller.js";
-import tasksRouter from "../tasks/tasks.routes.js";
+import listsRouter from "../lists/lists.routes.js";
 
 const router = Router({ mergeParams: true });
 
-router.get("/", controller.index);
-router.get("/:projectId", controller.validateProjectRoute, controller.show);
-router.post("/", controller.validateProjectInput, controller.create);
-router.put(
-  "/:projectId",
-  controller.validateProjectRoute,
-  controller.validateProjectInput,
-  controller.update,
-);
-router.delete(
-  "/:projectId",
-  controller.validateProjectRoute,
-  controller.destroy,
-);
+router.param("projectId", controller.validateProjectRoute);
 
-router.use("/:projectId/tasks", controller.validateProjectRoute, tasksRouter);
+router.get("/", controller.index);
+router.get("/:projectId", controller.show);
+router.post("/", controller.validateProjectInput, controller.create);
+router.put("/:projectId", controller.validateProjectInput, controller.update);
+router.delete("/:projectId", controller.destroy);
+
+router.use("/:projectId/lists", listsRouter);
 
 export default router;

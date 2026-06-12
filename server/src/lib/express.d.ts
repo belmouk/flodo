@@ -4,6 +4,9 @@ declare global {
   namespace Express {
     interface Request {
       userId: number;
+      projectId: number;
+      listId: number;
+      workspaceId: number;
     }
   }
 }

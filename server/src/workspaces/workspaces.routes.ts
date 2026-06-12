@@ -4,23 +4,20 @@ import projectsRouter from "../projects/projects.routes.js";
 
 const router = Router();
 
+router.param("workspaceId", controller.validateWorkspaceRoute);
+
 router.get("/", controller.index);
-router.post("/", controller.create);
-router.get("/:workspaceId", controller.validateWorkspaceRoute, controller.show);
+router.post("/", controller.validateWorkspaceInput, controller.create);
+router.get("/:workspaceId", controller.show);
 router.put(
   "/:workspaceId",
-  controller.validateWorkspaceRoute,
+  controller.validateWorkspaceInput,
   controller.update,
 );
-router.delete(
-  "/:workspaceId",
-  controller.validateWorkspaceRoute,
-  controller.destroy,
-);
+router.delete("/:workspaceId", controller.destroy);
 
 router.use(
   "/:workspaceId/projects",
-  controller.validateWorkspaceRoute,
   controller.ensureWorkspaceMembership,
   projectsRouter,
 );
