@@ -1,82 +1,79 @@
 import { prisma } from "../lib/prisma.js";
 import { Task, TaskStatus } from "../prisma/client.js";
 
-export const index = async (projectId: number) => {
-  return await prisma.task.findMany({ where: { projectId } });
+export const getAll = async (listId: number) => {
+  return await prisma.task.findMany({ where: { listId } });
 };
 
-type Result<T> = { success: true; data: T } | { success: false; error: string };
-
-export const show = async (
-  projectId: number,
-  taskId: number,
-): Promise<Result<Task>> => {
-  const result = await prisma.task.findUnique({
-    where: { projectId, id: taskId },
+export const getById = async (listId: number, taskId: number) => {
+  return await prisma.task.findUnique({
+    where: { listId, id: taskId },
   });
-  if (!result) {
-    return { success: false, error: "TaskDoesNotExist" };
-  }
-  return { success: true, data: result };
 };
 
 export const create = async ({
-  projectId,
-  content,
+  listId,
+  description,
+  title,
   dueAt,
   assignerId,
   assigneeId,
 }: {
-  projectId: number;
-  content: string;
+  listId: number;
+  description: string | null;
+  title: string;
   dueAt: Date;
   assignerId: number;
   assigneeId: number;
 }) => {
   return await prisma.task.create({
-    data: { projectId, content, dueAt, assigneeId, assignerId },
+    data: { listId, description, title, dueAt, assigneeId, assignerId },
   });
 };
 
 export const update = async ({
   id,
-  content,
+  title,
+  description,
   dueAt,
   status,
   assigneeId,
+  listId,
 }: {
   id: number;
-  content: string;
+  title: string;
+  description: string | null;
   dueAt: Date;
   status: TaskStatus;
   assigneeId: number;
+  listId: number;
 }) => {
   return await prisma.task.update({
     where: { id },
     data: {
-      content,
+      title,
+      description,
       status,
       dueAt,
       assigneeId,
       completedAt: status === "DONE" ? new Date(Date.now()) : null,
+      listId,
     },
+  });
+};
+
+export const getByAssignerId = async (userId: number, taskId: number) => {
+  return await prisma.task.findUnique({
+    where: { id: taskId, assignerId: userId },
   });
 };
 
 export const hasEditRights = async (userId: number, taskId: number) => {
   const task = await prisma.task.findUnique({
-    where: { id: taskId, assignerId: userId },
+    where: { id: taskId },
+    select: { assigneeId: true, assignerId: true },
   });
-  if (!task) return false;
-  return true;
-};
-
-export const hasDeleteRights = async (userId: number, taskId: number) => {
-  const task = await prisma.task.findUnique({
-    where: { id: taskId, assignerId: userId },
-  });
-  if (!task) return false;
-  return true;
+  return task?.assigneeId === userId || task?.assignerId === userId;
 };
 
 export const destroy = async (taskId: number) => {

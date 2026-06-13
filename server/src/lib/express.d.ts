@@ -7,6 +7,7 @@ declare global {
       projectId: number;
       listId: number;
       workspaceId: number;
+      taskId: number;
     }
   }
 }

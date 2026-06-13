@@ -1,61 +1,52 @@
-import { Request, Response, NextFunction, application } from "express";
+import { Request, Response, NextFunction } from "express";
 import * as services from "./tasks.services.js";
 import z from "zod";
 import ApiError from "../lib/ApiError.js";
 import formatErrorDetails from "../lib/formatErrorDetails.js";
 import { TaskStatus } from "../prisma/enums.js";
+import { Task } from "../prisma/client.js";
 
-export const index = async (
-  req: Request<{ workspaceId: string; projectId: string }>,
-  res: Response,
-) => {
-  const projectId = parseInt(req.params.projectId, 10);
-  const tasks = await services.index(projectId);
+export const index = async (req: Request, res: Response) => {
+  const tasks = await services.getAll(req.listId);
   return res.json(tasks);
 };
 
-export const show = async (
-  req: Request<{ workspaceId: string; projectId: string; taskId: string }>,
-  res: Response,
-) => {
-  const taskId = parseInt(req.params.taskId, 10);
-  const projectId = parseInt(req.params.projectId, 10);
-  const result = await services.show(projectId, taskId);
-  if (!result.success) {
-    throw new ApiError("Task was not found", 404, result.error);
+export const show = async (req: Request, res: Response) => {
+  const result = await services.getById(req.listId, req.taskId);
+  if (!result) {
+    throw new ApiError("Task was not found", 404, "TaskDoesNotExist");
   }
-  return res.json(result.data);
+  return res.json(result);
 };
 
 export const validateTaskRoute = async (
-  req: Request<{ workspaceId: string; projectId: string; taskId: string }>,
+  req: Request,
   res: Response,
   next: NextFunction,
+  taskId: string,
 ) => {
-  const ParamsSchema = z.object({
-    workspaceId: z.coerce.number().int().positive(),
-    projectId: z.coerce.number().int().positive(),
-    taskId: z.coerce.number().int().positive(),
-  });
-  const result = ParamsSchema.safeParse(req.params);
+  const schema = z.coerce.number().int().positive();
+  const result = schema.safeParse(taskId);
+
   if (!result.success) {
     throw new ApiError("Invalid route params", 400, "InvalidRouteParams");
   }
-
+  const task = await services.getById(req.listId, result.data);
+  if (!task) throw new ApiError("Task does not exist", 404, "TaskDoesNotExist");
+  req.taskId = result.data;
   return next();
 };
 
 export const create = async (
   req: Request<
-    { projectId: string },
     any,
-    { content: string; dueAt: Date; assigneeId: number }
+    any,
+    { title: string; description: string; dueAt: Date; assigneeId: number }
   >,
   res: Response,
 ) => {
-  const projectId = parseInt(req.params.projectId, 10);
   const task = await services.create({
-    projectId,
+    listId: req.listId,
     ...req.body,
     assignerId: req.userId,
   });
@@ -68,12 +59,17 @@ export const validateTaskCreation = async (
   next: NextFunction,
 ) => {
   const schema = z.object({
-    content: z
+    title: z
       .string()
       .trim()
       .min(1, "Specify the task")
-      .max(255, "Task content is too long"),
+      .max(255, "Task title is too long"),
     dueAt: z.coerce.date("Due date should be of type date"),
+    description: z
+      .string()
+      .trim()
+      .max(5000, "Description content is too long")
+      .optional(),
     assigneeId: z.coerce
       .number()
       .int()
@@ -99,11 +95,16 @@ export const validateTaskUpdate = async (
   next: NextFunction,
 ) => {
   const schema = z.object({
-    content: z
+    title: z
       .string()
       .trim()
       .min(1, "Specify the task")
-      .max(255, "Task content is too long")
+      .max(255, "Task title is too long")
+      .optional(),
+    description: z
+      .string()
+      .trim()
+      .max(5000, "Description content is too long")
       .optional(),
     dueAt: z.coerce.date("Due date should be of type date").optional(),
     assigneeId: z.coerce
@@ -113,6 +114,11 @@ export const validateTaskUpdate = async (
       .optional(),
     status: z
       .literal(["WIP", "DONE", "OVERDUE"], "Task status not found")
+      .optional(),
+    listId: z.coerce
+      .number()
+      .int()
+      .positive("listId must be a positive integer")
       .optional(),
   });
   const result = schema.safeParse(req.body);
@@ -131,49 +137,33 @@ export const validateTaskUpdate = async (
 
 export const update = async (
   req: Request<
-    { projectId: string; taskId: string },
+    any,
     any,
     {
-      content?: string;
+      title?: string;
+      description?: string;
       dueAt?: Date;
       assigneeId?: number;
       status?: TaskStatus;
+      listId: number;
     }
   >,
   res: Response,
 ) => {
-  const projectId = parseInt(req.params.projectId, 10);
-  const taskId = parseInt(req.params.taskId, 10);
-  const result = await services.show(projectId, taskId);
-  if (!result.success) {
-    throw new ApiError("Task was not found", 404, result.error);
-  }
-  const userHasEditRights = await services.hasEditRights(req.userId, taskId);
-  if (!userHasEditRights) {
+  const hasEditRights = await services.hasEditRights(req.userId, req.taskId);
+  if (!hasEditRights) {
     throw new ApiError("unauthorized action", 403, "UnAuthorizedAction");
   }
-  const updateData = { ...result.data, ...req.body };
-  const task = await services.update(updateData);
-  return res.json(task);
+  const task = (await services.getById(req.listId, req.taskId)) as Task;
+  const updatedTask = await services.update({ ...task, ...req.body });
+  return res.json(updatedTask);
 };
 
-export const destroy = async (
-  req: Request<{ projectId: string; taskId: string }>,
-  res: Response,
-) => {
-  const projectId = parseInt(req.params.projectId, 10);
-  const taskId = parseInt(req.params.taskId, 10);
-  const result = await services.show(projectId, taskId);
-  if (!result.success) {
-    throw new ApiError("Task was not found", 404, result.error);
-  }
-  const userHasDeleteRights = await services.hasDeleteRights(
-    req.userId,
-    taskId,
-  );
-  if (!userHasDeleteRights) {
+export const destroy = async (req: Request, res: Response) => {
+  const hasEditRights = await services.hasEditRights(req.userId, req.taskId);
+  if (!hasEditRights) {
     throw new ApiError("unauthorized action", 403, "UnAuthorizedAction");
   }
-  await services.destroy(taskId);
+  await services.destroy(req.taskId);
   return res.sendStatus(204);
 };

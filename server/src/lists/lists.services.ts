@@ -1,5 +1,31 @@
 import { prisma } from "../lib/prisma.js";
 
-export const index = async (projectId: number) => {
+export const getAll = async (projectId: number) => {
   return await prisma.list.findMany({ where: { projectId } });
+};
+
+export const getById = async (projectId: number, listId: number) => {
+  return await prisma.list.findUnique({ where: { projectId, id: listId } });
+};
+
+export const update = async (id: number, name: string) => {
+  return await prisma.list.update({ where: { id }, data: { name } });
+};
+
+export const userIsProjectMember = async (
+  userId: number,
+  projectId: number,
+) => {
+  const user = await prisma.projectUser.findUnique({
+    where: { userId_projectId: { userId, projectId } },
+  });
+  return !!user;
+};
+
+export const create = async (projectId: number, name: string) => {
+  return await prisma.list.create({ data: { projectId, name } });
+};
+
+export const destroy = async (listId: number) => {
+  await prisma.list.deleteMany({ where: { id: listId } });
 };

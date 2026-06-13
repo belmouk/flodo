@@ -4,17 +4,18 @@ import { prisma } from "../lib/prisma.js";
 import { createUser } from "./auth.services.js";
 import { CookieAccessInfo } from "cookiejar";
 
-beforeEach(
-  async () =>
-    await prisma.$transaction([
-      prisma.workspaceUser.deleteMany(),
-      prisma.projectUser.deleteMany(),
-      prisma.project.deleteMany(),
-      prisma.workspace.deleteMany(),
-      prisma.refreshToken.deleteMany(),
-      prisma.user.deleteMany(),
-    ]),
-);
+beforeEach(async () => {
+  await prisma.$transaction([
+    prisma.workspaceUser.deleteMany(),
+    prisma.projectUser.deleteMany(),
+    prisma.task.deleteMany(),
+    prisma.list.deleteMany(),
+    prisma.project.deleteMany(),
+    prisma.workspace.deleteMany(),
+    prisma.refreshToken.deleteMany(),
+    prisma.user.deleteMany(),
+  ]);
+});
 
 describe("POST auth/signup", () => {
   const [firstName, lastName, email, password] = [

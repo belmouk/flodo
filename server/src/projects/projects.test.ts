@@ -21,6 +21,8 @@ beforeEach(async () => {
   await prisma.$transaction([
     prisma.workspaceUser.deleteMany(),
     prisma.projectUser.deleteMany(),
+    prisma.task.deleteMany(),
+    prisma.list.deleteMany(),
     prisma.project.deleteMany(),
     prisma.workspace.deleteMany(),
     prisma.refreshToken.deleteMany(),

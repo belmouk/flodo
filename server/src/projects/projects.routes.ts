@@ -12,6 +12,10 @@ router.post("/", controller.validateProjectInput, controller.create);
 router.put("/:projectId", controller.validateProjectInput, controller.update);
 router.delete("/:projectId", controller.destroy);
 
-router.use("/:projectId/lists", listsRouter);
+router.use(
+  "/:projectId/lists",
+  controller.ensureProjectMembership,
+  listsRouter,
+);
 
 export default router;

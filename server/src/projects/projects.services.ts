@@ -1,27 +1,16 @@
 import { prisma } from "../lib/prisma.js";
-import { Project, ProjectUser } from "../prisma/client.js";
 
-type Result<T> = { success: true; data: T } | { success: false; error: string };
-
-export const index = async (workspaceId: number) => {
+export const getAll = async (workspaceId: number) => {
   return await prisma.project.findMany({
     where: { workspaceId },
     orderBy: { name: "asc" },
   });
 };
 
-export const show = async (
-  id: number,
-  workspaceId: number,
-): Promise<Result<Project>> => {
-  const result = await prisma.project.findUnique({
+export const getById = async (id: number, workspaceId: number) => {
+  return await prisma.project.findUnique({
     where: { id, workspaceId },
   });
-  if (result) {
-    return { success: true, data: result };
-  } else {
-    return { success: false, error: "ProjectDoesNotExist" };
-  }
 };
 
 interface CreateInput {
@@ -54,20 +43,6 @@ export const create = async ({ workspaceId, name, userId }: CreateInput) => {
   return project;
 };
 
-export const checkWorkspaceHasProject = async (
-  workspaceId: number,
-  projectId: number,
-): Promise<Result<Project>> => {
-  const result = await prisma.project.findUnique({
-    where: { workspaceId, id: projectId },
-  });
-  if (result) {
-    return { success: true, data: result };
-  } else {
-    return { success: false, error: "ProjectDoesNotExist" };
-  }
-};
-
 export const update = async (projectId: number, name: string) => {
   return await prisma.project.update({
     where: { id: projectId },
@@ -93,4 +68,14 @@ export const destroy = async (projectId: number) => {
     prisma.projectUser.deleteMany({ where: { projectId } }),
     prisma.project.deleteMany({ where: { id: projectId } }),
   ]);
+};
+
+export const userIsProjectMember = async (
+  userId: number,
+  projectId: number,
+) => {
+  const project = await prisma.projectUser.findUnique({
+    where: { userId_projectId: { userId, projectId } },
+  });
+  return project;
 };
