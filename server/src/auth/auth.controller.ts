@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { UserLogin, UserSignup } from "./auth.schema.js";
 import CONFIG from "../lib/config.js";
 import ApiError from "../lib/ApiError.js";
+import { getById } from "../users/users.services.js";
 
 export const signup = async (
   req: Request<any, any, UserSignup>,
@@ -46,6 +47,12 @@ export const refresh = async (req: Request, res: Response) => {
   if (!token) throw new ApiError("Missing refresh token", 401, "MissingToken");
 
   const validatedRefreshToken = await services.validateRefreshToken(token);
+
+  const user = await getById(validatedRefreshToken.userId);
+  if (!user) {
+    await services.deleteRefreshToken(token);
+    throw new ApiError("Invalid token", 401, "InvalidRefreshToken");
+  }
   const { refreshToken, accessToken } = await services.createNewTokens(
     validatedRefreshToken,
   );
@@ -65,7 +72,7 @@ export const refresh = async (req: Request, res: Response) => {
     path: "/api/auth",
   });
 
-  return res.sendStatus(204);
+  return res.json(user);
 };
 
 export const logout = async (req: Request, res: Response) => {

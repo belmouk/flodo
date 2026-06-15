@@ -152,7 +152,7 @@ model RefreshToken {
   token String
   createdAt DateTime @default(now()) @map("created_at")
   expiresAt DateTime 
-  jti String
+  jti String @unique
   user User @relation(fields: [userId], references: [id])
   userId Int @unique
   @@map("refresh_tokens")

@@ -116,7 +116,7 @@ export const validateRefreshToken = async (token: string) => {
       issuer: CONFIG.JWT_ISSUER,
       audience: CONFIG.JWT_AUDIENCE,
     });
-    const refreshToken = await prisma.refreshToken.findFirst({
+    const refreshToken = await prisma.refreshToken.findUnique({
       where: { jti: payload.jti },
     });
     if (!refreshToken)
