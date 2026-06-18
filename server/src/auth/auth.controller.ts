@@ -43,11 +43,27 @@ export const login = async (
 };
 
 export const refresh = async (req: Request, res: Response) => {
-  const token = req.cookies?.refreshToken;
-  if (!token) throw new ApiError("Missing refresh token", 401, "MissingToken");
+  const token = req.cookies?.refreshToken as string | undefined;
+  if (!token)
+    throw new ApiError("Missing refresh token", 401, "MissingRefreshToken");
 
-  const validatedRefreshToken = await services.validateRefreshToken(token);
-
+  const result = await services.validateRefreshToken(token);
+  if (!result.success) {
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: CONFIG.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/api/auth",
+    });
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: CONFIG.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/api",
+    });
+    throw new ApiError("Invalid refresh token", 401, result.error);
+  }
+  const validatedRefreshToken = result.data;
   const user = await getById(validatedRefreshToken.userId);
   if (!user) {
     await services.deleteRefreshToken(token);
@@ -76,6 +92,7 @@ export const refresh = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
+  console.log(req.cookies);
   const refreshToken = req.cookies?.refreshToken;
   if (refreshToken) {
     await services.deleteRefreshToken(refreshToken);
@@ -93,4 +110,31 @@ export const logout = async (req: Request, res: Response) => {
     });
   }
   return res.sendStatus(204);
+};
+
+export const me = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.refreshToken as string | undefined;
+  if (!refreshToken) {
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: CONFIG.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/api",
+    });
+    throw new ApiError("Missing refresh Token", 401, "MissingRefreshToken");
+  }
+  const accessToken = req.cookies?.accessToken as string | undefined;
+  if (!accessToken)
+    throw new ApiError("Expired access token", 401, "ExpiredAccessToken");
+  const user = await services.getUserId(accessToken);
+  if (!user) {
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: CONFIG.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/api",
+    });
+    throw new ApiError("Invalid access token", 401, "InvalidAccessToken");
+  }
+  return res.json(user);
 };

@@ -23,7 +23,7 @@ model User {
   tasksToDo Task[] @relation("taskAssignee")
   tasksToReview Task[] @relation("taskAssigner")
   workspaceMemberships WorkspaceUser[]
-  token RefreshToken?
+  token RefreshToken[]
 
   @@map("users")
 }
@@ -149,11 +149,11 @@ enum TaskUserRole {
 
 model RefreshToken {
   id Int @id @default(autoincrement())
-  token String
   createdAt DateTime @default(now()) @map("created_at")
   expiresAt DateTime 
   jti String @unique
   user User @relation(fields: [userId], references: [id])
-  userId Int @unique
+  userId Int
+  
   @@map("refresh_tokens")
 }

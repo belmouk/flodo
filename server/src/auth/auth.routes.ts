@@ -11,5 +11,6 @@ router.post("/signup", validateUserSignup, controller.signup);
 router.post("/login", validateUserLogin, controller.login);
 router.post("/refresh", controller.refresh);
 router.post("/logout", controller.logout);
+router.get("/me", controller.me);
 
 export default router;

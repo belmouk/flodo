@@ -6,6 +6,16 @@ import { jwtVerify, SignJWT, errors } from "jose";
 import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
 import { RefreshToken } from "../prisma/client.js";
+import { JWTExpired, JWTInvalid } from "jose/errors";
+
+interface MyTokenPayload {
+  iss: string;
+  exp: number;
+  sub: string;
+  iat: number;
+  jti: string;
+  aud: string;
+}
 
 export const createUser = async ({
   firstName,
@@ -81,7 +91,7 @@ export const createRefreshToken = async (userId: number) => {
     .setJti(jti)
     .sign(encodedSecret);
 
-  await saveRefreshToken({ userId, refreshToken: { jti, expiresAt, token } });
+  await saveRefreshToken({ userId, refreshToken: { jti, expiresAt } });
   return token;
 };
 
@@ -90,13 +100,11 @@ export const saveRefreshToken = async ({
   refreshToken,
 }: {
   userId: number;
-  refreshToken: { jti: string; expiresAt: Date; token: string };
+  refreshToken: { jti: string; expiresAt: Date };
 }) => {
-  const { token, jti, expiresAt } = refreshToken;
-  await prisma.refreshToken.upsert({
-    where: { userId },
-    update: { token, jti, expiresAt },
-    create: { token, jti, expiresAt, user: { connect: { id: userId } } },
+  const { jti, expiresAt } = refreshToken;
+  await prisma.refreshToken.create({
+    data: { jti, expiresAt, user: { connect: { id: userId } } },
   });
 };
 
@@ -109,29 +117,28 @@ export const createNewTokens = async (refreshToken: RefreshToken) => {
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 
-export const validateRefreshToken = async (token: string) => {
+type Result =
+  | { success: true; data: RefreshToken }
+  | { success: false; error: string };
+
+export const validateRefreshToken = async (token: string): Promise<Result> => {
   try {
     const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
-    const { payload } = await jwtVerify(token, secret, {
+    const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
       issuer: CONFIG.JWT_ISSUER,
       audience: CONFIG.JWT_AUDIENCE,
     });
     const refreshToken = await prisma.refreshToken.findUnique({
-      where: { jti: payload.jti },
+      where: { jti: payload.jti, expiresAt: { gt: new Date() } },
     });
-    if (!refreshToken)
-      throw new ApiError("Invalid token", 401, "InvalidRefreshToken");
-    if (new Date(refreshToken.expiresAt) < new Date(Date.now())) {
-      await prisma.refreshToken.deleteMany({ where: { id: refreshToken.id } });
-      throw new ApiError("Expired token", 401, "ExpiredRefreshToken");
-    }
-    return refreshToken;
+    if (!refreshToken) return { success: false, error: "InvalidRefreshToken" };
+    return { success: true, data: refreshToken };
   } catch (error) {
-    if (error instanceof errors.JWTExpired) {
-      throw new ApiError("Expired Access Token", 401, "ExpiredRefreshToken");
+    if (error instanceof JWTExpired) {
+      return { success: false, error: "ExpiredRefreshToken" };
     }
-    if (error instanceof errors.JWTInvalid) {
-      throw new ApiError("Invalid Access Token", 401, "InvalidRefreshToken");
+    if (error instanceof JWTInvalid) {
+      return { success: false, error: "InvalidRefreshToken" };
     }
     throw error;
   }
@@ -140,13 +147,35 @@ export const validateRefreshToken = async (token: string) => {
 export const deleteRefreshToken = async (token: string) => {
   try {
     const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
-    const { payload } = await jwtVerify(token, secret, {
+    const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
+      audience: CONFIG.JWT_AUDIENCE,
+      issuer: CONFIG.JWT_ISSUER,
+    });
+    await prisma.refreshToken.deleteMany({ where: { jti: payload.jti } });
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const getUserId = async (token: string) => {
+  try {
+    const secret = new TextEncoder().encode(CONFIG.ACCESS_TOKEN_SECRET);
+    const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
       issuer: CONFIG.JWT_ISSUER,
       audience: CONFIG.JWT_AUDIENCE,
     });
-    await prisma.refreshToken.deleteMany({ where: { jti: payload.jti } });
+    const userId = parseInt(payload.sub, 10);
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      omit: { password: true },
+    });
   } catch (error) {
-    if (error instanceof errors.JOSEError) return;
+    if (error instanceof JWTExpired) {
+      throw new ApiError("Expired access token", 401, "ExpiredAccessToken");
+    }
+    if (error instanceof JWTInvalid) {
+      throw new ApiError("Invalid access token", 401, "InvalidAccessToken");
+    }
     throw error;
   }
 };
