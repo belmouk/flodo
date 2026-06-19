@@ -1,6 +1,7 @@
 import { Outlet, Link } from "react-router";
+import Navbar from "@/components/navbar";
 
-function HomeLayout() {
+function PublicLayout() {
   return (
     <>
       <header>
@@ -10,10 +11,10 @@ function HomeLayout() {
               <Link to="/">Home</Link>
             </li>
             <li>
-              <Link to="/auth/login">Log in</Link>
+              <Link to="/login">Log in</Link>
             </li>
             <li>
-              <Link to="/auth/signup">Sign up</Link>
+              <Link to="/signup">Sign up</Link>
             </li>
           </ul>
         </nav>
@@ -28,4 +29,4 @@ function HomeLayout() {
   );
 }
 
-export default HomeLayout;
+export default PublicLayout;

@@ -95,7 +95,7 @@ function Signup() {
     },
 
     onSuccess: () => {
-      return navigate("/auth/login");
+      return navigate("/login");
     },
     onError: (error: ApiError) => {
       if (error.status === 500) return navigate("/500");

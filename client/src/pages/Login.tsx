@@ -79,7 +79,7 @@ function Login() {
     },
 
     onSuccess: () => {
-      return navigate("/");
+      return navigate("/workspaces");
     },
     onError: (error: ApiError) => {
       if (error.status === 500) return navigate("/500");
