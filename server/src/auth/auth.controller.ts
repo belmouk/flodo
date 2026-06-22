@@ -29,14 +29,14 @@ export const login = async (
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/api/auth",
+    path: "/",
   });
   res.cookie("accessToken", accessToken, {
     maxAge: 15 * 1000,
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/api",
+    path: "/",
   });
 
   return res.sendStatus(204);
@@ -53,13 +53,13 @@ export const refresh = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: CONFIG.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api/auth",
+      path: "/",
     });
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: CONFIG.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api",
+      path: "/",
     });
     throw new ApiError("Invalid refresh token", 401, result.error);
   }
@@ -78,14 +78,14 @@ export const refresh = async (req: Request, res: Response) => {
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/api/auth/refresh",
+    path: "/",
   });
   res.cookie("accessToken", accessToken, {
     maxAge: 15 * 1000,
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/api/auth",
+    path: "/",
   });
 
   return res.json(user);
@@ -100,13 +100,13 @@ export const logout = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: CONFIG.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api/auth",
+      path: "/",
     });
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: CONFIG.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api",
+      path: "/",
     });
   }
   return res.sendStatus(204);
@@ -119,7 +119,7 @@ export const me = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: CONFIG.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api",
+      path: "/",
     });
     throw new ApiError("Missing refresh Token", 401, "MissingRefreshToken");
   }
@@ -132,7 +132,7 @@ export const me = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: CONFIG.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api",
+      path: "/",
     });
     throw new ApiError("Invalid access token", 401, "InvalidAccessToken");
   }
