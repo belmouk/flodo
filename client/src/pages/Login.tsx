@@ -73,6 +73,7 @@ function Login() {
         });
         if (!res.ok) {
           const errorData = await res.json();
+
           throw errorData;
         }
       }
@@ -82,7 +83,7 @@ function Login() {
       return navigate("/workspaces");
     },
     onError: (error: ApiError) => {
-      if (error.status === 500) return navigate("/500");
+      if (error.status === 500) throw new Response(null, { status: 500 });
       if (error.code === "Validation") return;
       if (error.code === "UserDoesNotExist") {
         error["details"] = {

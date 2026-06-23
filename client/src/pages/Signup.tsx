@@ -79,7 +79,7 @@ function Signup() {
           }
         }
         setErrors(newErrors);
-        throw { type: "validation" };
+        throw { code: "Validation" };
       } else {
         const res = await fetch(apiUrl + "/auth/signup", {
           method: "POST",
@@ -98,7 +98,7 @@ function Signup() {
       return navigate("/login");
     },
     onError: (error: ApiError) => {
-      if (error.status === 500) return navigate("/500");
+      if (error.status === 500) throw new Response(null, { status: 500 });
       if (error.code === "Validation") return;
       if (error.details) {
         setErrors(error.details);

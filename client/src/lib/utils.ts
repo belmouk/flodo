@@ -1,6 +1,58 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+const apiUrl = import.meta.env.VITE_API_URL;
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
+
+type ApiResult<T> =
+  | { success: false; error: Record<string, { message: string }[]> }
+  | { success: true; data: T };
+
+export const fetchApi = async <T>(
+  url: string,
+  method: "POST" | "GET" | "PUT" | "DELETE",
+  body?: Record<string, any>,
+  retry = false,
+): Promise<ApiResult<T>> => {
+  const res = await fetch(url, {
+    method,
+    credentials: "include",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.ok) return { success: true, data: await res.json() };
+  if (res.status === 400) return { success: false, error: await res.json() };
+  if (res.status !== 401) throw new Response(null, { status: res.status });
+
+  if (retry) {
+    return {
+      success: false,
+      error: await res.json(),
+    };
+  }
+
+  const err = await res.json();
+
+  if (err.code !== "ExpiredAccessToken" && err.code !== "MissingAccessToken")
+    return {
+      success: false,
+      error: err,
+    };
+
+  const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!refreshRes.ok)
+    return {
+      success: false,
+      error: await refreshRes.json(),
+    };
+
+  return fetchApi(url, method, body, true);
+};
