@@ -24,7 +24,10 @@ export const fetchApi = async <T>(
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (res.ok) return { success: true, data: await res.json() };
+  if (res.ok) {
+    if (res.status === 204) return { success: true, data: undefined as T };
+    return { success: true, data: await res.json() };
+  }
   if (res.status === 400) return { success: false, error: await res.json() };
   if (res.status !== 401) throw new Response(null, { status: res.status });
 
