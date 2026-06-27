@@ -62,10 +62,7 @@ export const hasDeleteRights = async (userId: number, workspaceId: number) => {
 };
 
 export const destroy = async (workspaceId: number) => {
-  await prisma.$transaction([
-    prisma.workspaceUser.deleteMany({ where: { workspaceId } }),
-    prisma.workspace.deleteMany({ where: { id: workspaceId } }),
-  ]);
+  await prisma.workspace.deleteMany({ where: { id: workspaceId } });
 };
 
 export const isWorkspaceMember = async (
