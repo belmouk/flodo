@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate } from "react-router";
 import { useLoaderData } from "react-router";
 import type { LoaderData } from "@/routes";
+import { Button } from "@/components/ui/button";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -23,12 +24,12 @@ function ProtectedLayout() {
     <>
       <header>
         <nav className="px-4 py-4">
-          <ul className="flex justify-center gap-4">
+          <ul className="flex justify-center items-center gap-4">
             <li>
               <Link to="/workspaces">Workspaces</Link>
             </li>
             <li>
-              <button onClick={handleLogOut} className="border">
+              <button onClick={handleLogOut} className="hover:cursor-pointer">
                 Log out
               </button>
             </li>

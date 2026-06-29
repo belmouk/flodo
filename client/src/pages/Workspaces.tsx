@@ -3,12 +3,10 @@ import { Outlet, useOutletContext, Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
 import type { Workspace } from "../../../server/generated/prisma/client";
-import {
-  ControlPanel,
-  ControlPanelCreate,
-  ControlPanelDelete,
-  ControlPanelUpdate,
-} from "@/components/ControlPanel";
+import ControlPanel from "@/components/controlPanel";
+import WorkspaceCreate from "@/components/workspaces/workspaceCreate";
+import WorkspaceDelete from "@/components/workspaces/workspaceDelete";
+import WorkspaceUpdate from "@/components/workspaces/workspaceUpdate";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -35,11 +33,11 @@ function Workspaces() {
           <ControlPanel>
             {workspaceId ? (
               <>
-                <ControlPanelUpdate />
-                <ControlPanelDelete />
+                <WorkspaceUpdate />
+                <WorkspaceDelete />
               </>
             ) : null}
-            <ControlPanelCreate />
+            <WorkspaceCreate />
           </ControlPanel>
         </div>
         {isPending ? (
