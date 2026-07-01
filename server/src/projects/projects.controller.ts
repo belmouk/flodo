@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import * as services from "./projects.services.js";
 import ApiError from "../lib/ApiError.js";
 import z from "zod";
-import formatErrorDetails from "../lib/formatErrorDetails.js";
 
 export const index = async (req: Request, res: Response) => {
   const projects = await services.getAll(req.workspaceId);
@@ -91,12 +90,7 @@ export const validateProjectInput = (
   const result = schema.safeParse(req.body);
   if (!result.success) {
     const errors = z.flattenError(result.error).fieldErrors;
-    throw new ApiError(
-      "Invalid project data",
-      400,
-      "InvalidDataError",
-      formatErrorDetails(errors),
-    );
+    throw new ApiError("Invalid project data", 400, "InvalidDataError", errors);
   }
   req.body = result.data;
   return next();

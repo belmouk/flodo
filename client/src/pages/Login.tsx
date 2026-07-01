@@ -13,19 +13,9 @@ import React, { useState } from "react";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import type ApiError from "../../../server/src/lib/ApiError";
 
-interface ValidationError<T extends { message: string } = { message: string }> {
-  email?: T[];
-  password?: T[];
-  other?: T[];
-}
-
-interface ApiError {
-  message?: string;
-  status?: number;
-  code?: string;
-  details?: Record<string, any>;
-}
+type FormErrors = Record<string, string[] | undefined>;
 
 const schema = z.object({
   email: z
@@ -43,74 +33,46 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 function Login() {
   const navigate = useNavigate();
-  const [errors, setErrors] = useState<ValidationError>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [input, setInput] = useState({
     password: "",
     email: "",
   });
   const mutation = useMutation({
     mutationFn: async (data: typeof input) => {
-      if (mutation.isPending) return;
-      const result = schema.safeParse(data);
-      if (!result.success) {
-        const validationErrors = z.flattenError(result.error).fieldErrors;
-        const newErrors: ValidationError = {};
-        const FIELDS = ["password", "email"] as const;
-        for (const field of FIELDS) {
-          if (Object.keys(validationErrors).includes(field)) {
-            newErrors[field] = validationErrors[field]!.map((err) => ({
-              message: err,
-            }));
-          }
-        }
-        setErrors(newErrors);
-        throw { code: "Validation" };
-      } else {
-        const res = await fetch(apiUrl + "/auth/login", {
-          method: "POST",
-          body: JSON.stringify(result.data),
-          headers: { "Content-type": "application/json" },
-        });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw errorData;
-        }
+      const res = await fetch(apiUrl + "/auth/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-type": "application/json" },
+      });
+      if (!res.ok) {
+        const errorData = (await res.json()) as ApiError;
+        throw errorData;
       }
     },
-
     onSuccess: () => {
       return navigate("/workspaces");
     },
     onError: (error: ApiError) => {
       if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.code === "Validation") return;
-      if (error.code === "UserDoesNotExist") {
-        error["details"] = {
-          other: [
-            {
-              message: "Account does not exist. Verify email or go to signup",
-            },
-          ],
-        };
-      }
-      if (error.code === "WrongPassword") {
-        error["details"] = {
-          other: [{ message: "Wrong password. Try again" }],
-        };
-      }
-      if (error.details) {
-        setErrors(error.details);
-      }
+      setErrors(error.details);
     },
   });
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
-    mutation.mutate(input);
+    const result = schema.safeParse(input);
+    if (!result.success) {
+      const validationErrors = z.flattenError(result.error).fieldErrors;
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+    mutation.mutate(result.data);
   };
 
   const handleChange = (
-    field: string,
+    field: keyof typeof input,
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const newInput = { ...input, [field]: e.target.value };
@@ -133,11 +95,12 @@ function Login() {
                 placeholder="john.doe@gmail.com"
                 autoComplete="email"
                 value={input.email}
+                disabled={mutation.isPending}
                 onChange={(e) => {
                   handleChange("email", e);
                 }}
               />
-              {errors.email ? <FieldError errors={errors.email} /> : null}
+              {errors.email?.[0] && <FieldError>{errors.email[0]} </FieldError>}
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Password</FieldLabel>
@@ -146,14 +109,17 @@ function Login() {
                 id="password"
                 name="password"
                 placeholder="********"
+                disabled={mutation.isPending}
+                min={6}
+                max={50}
                 value={input.password}
                 onChange={(e) => {
                   handleChange("password", e);
                 }}
-                min={6}
-                max={50}
               />
-              {errors.password ? <FieldError errors={errors.password} /> : null}
+              {errors.password?.[0] && (
+                <FieldError>{errors.password[0]}</FieldError>
+              )}
               {input.password.length < 6 && (
                 <FieldDescription>
                   Password must have at least 6 characters
@@ -162,9 +128,6 @@ function Login() {
             </Field>
           </FieldGroup>
         </FieldSet>
-        <Field>
-          {errors.other ? <FieldError errors={errors.other} /> : null}
-        </Field>
         <Field>
           <Button type="submit" className="py-6" disabled={mutation.isPending}>
             {mutation.isPending ? "Logging in..." : "Log In"}

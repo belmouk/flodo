@@ -33,8 +33,8 @@ function Workspaces() {
           <ControlPanel>
             {workspaceId ? (
               <>
-                <WorkspaceUpdate />
-                <WorkspaceDelete />
+                <WorkspaceUpdate workspaceId={Number(workspaceId)} />
+                <WorkspaceDelete workspaceId={Number(workspaceId)} />
               </>
             ) : null}
             <WorkspaceCreate />

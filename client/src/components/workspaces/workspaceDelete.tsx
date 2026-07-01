@@ -1,26 +1,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { Button } from "../ui/button";
-import type React from "react";
 import { Trash2 } from "lucide-react";
 import { TooltipTrigger, Tooltip, TooltipContent } from "../ui/tooltip";
+import type ApiError from "../../../../server/src/lib/ApiError";
 
-interface ApiError {
-  message?: string;
-  status?: number;
-  code?: string;
-  details?: Record<string, any>;
+interface WorkspaceDeleteProps {
+  workspaceId: number;
 }
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-function WorkspaceDelete({ ...props }: React.ComponentProps<"button">) {
+function WorkspaceDelete({ workspaceId }: WorkspaceDeleteProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { workspaceId } = useParams();
   const deleteWorkspace = useMutation({
-    mutationFn: async (workspaceId: number) => {
+    mutationFn: async () => {
       const result = await fetchApi<undefined>(
         `${apiUrl}/workspaces/${workspaceId}`,
         "DELETE",
@@ -33,15 +29,13 @@ function WorkspaceDelete({ ...props }: React.ComponentProps<"button">) {
       navigate("/workspaces");
     },
     onError(error: ApiError) {
+      if (error.status === 500) throw new Response(null, { status: 500 });
       if (error.status === 401) return navigate("/login");
     },
   });
 
   const handleClick = () => {
-    if (workspaceId) {
-      const id = parseInt(workspaceId, 10);
-      deleteWorkspace.mutate(id);
-    }
+    deleteWorkspace.mutate();
   };
 
   return (
@@ -51,7 +45,6 @@ function WorkspaceDelete({ ...props }: React.ComponentProps<"button">) {
           className="hover:cursor-pointer"
           disabled={deleteWorkspace.isPending}
           onClick={handleClick}
-          {...props}
           variant={"ghost"}
         >
           <Trash2 className="size-6 text-red-500" />

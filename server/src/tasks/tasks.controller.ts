@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import * as services from "./tasks.services.js";
 import z from "zod";
 import ApiError from "../lib/ApiError.js";
-import formatErrorDetails from "../lib/formatErrorDetails.js";
 import { TaskStatus } from "../prisma/enums.js";
 import { Task } from "../prisma/client.js";
 
@@ -82,7 +81,7 @@ export const validateTaskCreation = async (
       "Invalid task creation input",
       400,
       "InputValidationError",
-      formatErrorDetails(errors),
+      errors,
     );
   }
   req.body = result.data;
@@ -128,7 +127,7 @@ export const validateTaskUpdate = async (
       "Invalid task update input",
       400,
       "InputValidationError",
-      formatErrorDetails(errors),
+      errors,
     );
   }
   req.body = result.data;

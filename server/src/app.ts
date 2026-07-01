@@ -37,12 +37,14 @@ app.use(
         message: err.message,
         details: err.details,
         code: err.code,
+        status: err.status,
       });
     } else {
       return res.status(500).send({
         message: "Oops something went wrong.",
         details: {},
         code: "InternalServerError",
+        status: 500,
       });
     }
   },

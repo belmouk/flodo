@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import * as services from "./workspaces.services.js";
 import ApiError from "../lib/ApiError.js";
 import * as z from "zod";
-import formatErrorDetails from "../lib/formatErrorDetails.js";
 
 export const index = async (req: Request, res: Response) => {
   const workspaces = await services.getWorkSpaces(req.userId);
@@ -108,7 +107,7 @@ export const validateWorkspaceInput = (
       "Invalid workspace creation input",
       400,
       "InputValidationError",
-      formatErrorDetails(errors),
+      errors,
     );
   }
   req.body = result.data;

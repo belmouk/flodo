@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type ApiError from "../../../server/src/lib/ApiError";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -8,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 type ApiResult<T> =
-  | { success: false; error: Record<string, { message: string }[]> }
+  | { success: false; error: ApiError }
   | { success: true; data: T };
 
 export const fetchApi = async <T>(

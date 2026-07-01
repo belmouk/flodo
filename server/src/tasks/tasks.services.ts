@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { Task, TaskStatus } from "../prisma/client.js";
+import { TaskStatus } from "../prisma/client.js";
 
 export const getAll = async (listId: number) => {
   return await prisma.task.findMany({ where: { listId } });

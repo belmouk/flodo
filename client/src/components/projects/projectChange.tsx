@@ -26,34 +26,9 @@ import * as z from "zod";
 import type { Project } from "../../../../server/generated/prisma/client";
 import { SquarePen, FilePlusCorner } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
+import type ApiError from "../../../../server/src/lib/ApiError";
 
-interface ApiError {
-  message?: string;
-  status?: number;
-  code?: string;
-  details?: Record<string, any>;
-}
-
-interface ProjectMutation {
-  name: string;
-}
-
-const apiUrl = import.meta.env.VITE_API_URL;
-
-const schema = z.object({
-  name: z
-    .string()
-    .min(1, "Project name is required")
-    .max(150, "Project name is too long"),
-});
-
-interface ValidationError {
-  name?: { message: string }[];
-}
-
-interface FormInput {
-  name: string;
-}
+type FormErrors = Record<string, string[] | undefined>;
 
 type ProjectChangeProps =
   | {
@@ -67,6 +42,15 @@ type ProjectChangeProps =
       workspaceId: number;
     };
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
+const schema = z.object({
+  name: z
+    .string()
+    .min(1, "Project name is required")
+    .max(150, "Project name is too long"),
+});
+
 function ProjectChange({
   HTTPMethod,
   projectId,
@@ -75,10 +59,10 @@ function ProjectChange({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [errors, setErrors] = useState<ValidationError>({});
-  const [input, setInput] = useState<FormInput>({ name: "" });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [input, setInput] = useState({ name: "" });
   const mutation = useMutation({
-    mutationFn: async ({ name }: ProjectMutation) => {
+    mutationFn: async ({ name }: typeof input) => {
       const url =
         HTTPMethod === "POST"
           ? `${apiUrl}/workspaces/${workspaceId}/projects`
@@ -89,10 +73,9 @@ function ProjectChange({
       return res.data;
     },
     onError(error: ApiError) {
+      if (error.status === 500) throw new Response(null, { status: 500 });
       if (error.status === 401) return navigate("/login");
-      if (error.details) {
-        setErrors(error.details);
-      }
+      setErrors(error.details);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -109,19 +92,15 @@ function ProjectChange({
     const result = schema.safeParse(input);
     if (!result.success) {
       const errors = z.flattenError(result.error).fieldErrors;
-      if (errors.name) {
-        const nameErrors = errors.name.map((err) => ({
-          message: err,
-        }));
-        setErrors({ name: nameErrors });
-      }
+      setErrors(errors);
       return;
     }
-    mutation.mutate({ ...result.data });
+    setErrors({});
+    mutation.mutate(result.data);
   };
 
   const handleChange = (
-    field: keyof FormInput,
+    field: keyof typeof input,
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setInput((prev) => ({ ...prev, [field]: e.target.value }));
@@ -182,11 +161,12 @@ function ProjectChange({
                   name="name"
                   id="name"
                   value={input.name}
+                  disabled={mutation.isPending}
                   onChange={(e) => {
                     handleChange("name", e);
                   }}
                 />
-                <FieldError errors={errors.name} />
+                {errors.name?.[0] && <FieldError>{errors.name[0]}</FieldError>}
               </Field>
             </FieldGroup>
           </FieldSet>

@@ -23,12 +23,12 @@ export const createUser = async ({
   password,
   email,
 }: UserSignup) => {
-  const existingUser = await prisma.user.findFirst({
+  const existingUser = await prisma.user.findUnique({
     where: { email },
   });
   if (existingUser) {
     throw new ApiError("Account already exists", 400, "UserAlreadyExists", {
-      email: [{ message: "Account already exists" }],
+      email: ["An account using this email already exists"],
     });
   }
 
@@ -44,16 +44,18 @@ export const verifyLoginCredentials = async ({
   email,
   password,
 }: UserLogin) => {
-  const user = await prisma.user.findFirst({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    throw new ApiError("User does not exists", 400, "UserDoesNotExist");
+    throw new ApiError("User does not exists", 400, "UserDoesNotExist", {
+      email: ["No account is registered with this email"],
+    });
   }
 
   const match = await bcrypt.compare(password, user.password);
 
   if (!match) {
     throw new ApiError("Wrong password", 403, "WrongPassword", {
-      password: "Wrong password",
+      password: ["Wrong password"],
     });
   }
   return user;

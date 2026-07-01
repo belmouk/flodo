@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import * as services from "./lists.services.js";
 import z from "zod";
 import ApiError from "../lib/ApiError.js";
-import formatErrorDetails from "../lib/formatErrorDetails.js";
 
 export const validateListRoute = async (
   req: Request,
@@ -35,12 +34,7 @@ export const validateListInput = (
   const result = schema.safeParse(req.body);
   if (!result.success) {
     const errors = z.flattenError(result.error).fieldErrors;
-    throw new ApiError(
-      "Invalid project data",
-      400,
-      "InvalidDataError",
-      formatErrorDetails(errors),
-    );
+    throw new ApiError("Invalid project data", 400, "InvalidDataError", errors);
   }
   req.body = result.data;
   return next();

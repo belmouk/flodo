@@ -5,13 +5,7 @@ import { Button } from "../ui/button";
 import type React from "react";
 import { Trash2 } from "lucide-react";
 import { TooltipTrigger, Tooltip, TooltipContent } from "../ui/tooltip";
-
-interface ApiError {
-  message?: string;
-  status?: number;
-  code?: string;
-  details?: Record<string, any>;
-}
+import type ApiError from "../../../../server/src/lib/ApiError";
 
 type ProjectDeleteProps = {
   projectId: number;
@@ -44,6 +38,7 @@ function ProjectDelete({
       setProjectId(undefined);
     },
     onError(error: ApiError) {
+      if (error.status === 500) throw new Response(null, { status: 500 });
       if (error.status === 401) return navigate("/login");
     },
   });

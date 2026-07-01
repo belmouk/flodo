@@ -14,12 +14,7 @@ import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 
-interface ValidationError<T extends { message: string } = { message: string }> {
-  firstName?: T[];
-  lastName?: T[];
-  email?: T[];
-  password?: T[];
-}
+type FormErrors = Record<string, string[] | undefined>;
 
 interface ApiError {
   message?: string;
@@ -56,7 +51,7 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 function Signup() {
   const navigate = useNavigate();
-  const [errors, setErrors] = useState<ValidationError>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [input, setInput] = useState({
     firstName: "",
     lastName: "",
@@ -65,33 +60,14 @@ function Signup() {
   });
   const mutation = useMutation({
     mutationFn: async (data: typeof input) => {
-      if (mutation.isPending) return;
-      const result = schema.safeParse(data);
-      if (!result.success) {
-        const validationErrors = z.flattenError(result.error).fieldErrors;
-        const newErrors: ValidationError = {};
-        const FIELDS = ["firstName", "lastName", "password", "email"] as const;
-        for (const field of FIELDS) {
-          if (Object.keys(validationErrors).includes(field)) {
-            newErrors[field] = validationErrors[field]!.map((err) => ({
-              message: err,
-            }));
-          }
-        }
-        setErrors(newErrors);
-        throw { code: "Validation" };
-      } else {
-        const res = await fetch(apiUrl + "/auth/signup", {
-          method: "POST",
-          body: JSON.stringify(result.data),
-          headers: { "Content-type": "application/json" },
-        });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw errorData;
-        }
-        return res.json();
-      }
+      const res = await fetch(apiUrl + "/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-type": "application/json" },
+      });
+      if (res.ok) return res.json();
+      const errorData = await res.json();
+      throw errorData;
     },
 
     onSuccess: () => {
@@ -99,7 +75,6 @@ function Signup() {
     },
     onError: (error: ApiError) => {
       if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.code === "Validation") return;
       if (error.details) {
         setErrors(error.details);
       }
@@ -108,7 +83,14 @@ function Signup() {
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
-    mutation.mutate(input);
+    const result = schema.safeParse(input);
+    if (!result.success) {
+      const validationErrors = z.flattenError(result.error).fieldErrors;
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+    mutation.mutate(result.data);
   };
 
   const handleChange = (
@@ -142,7 +124,7 @@ function Signup() {
                 max={100}
               />
               {errors.firstName ? (
-                <FieldError errors={errors.firstName} />
+                <FieldError>{errors.firstName[0]}</FieldError>
               ) : null}
             </Field>
             <Field>
@@ -160,7 +142,9 @@ function Signup() {
                 min={1}
                 max={100}
               />
-              {errors.lastName ? <FieldError errors={errors.lastName} /> : null}
+              {errors.lastName ? (
+                <FieldError>{errors.lastName[0]}</FieldError>
+              ) : null}
             </Field>
             <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -175,7 +159,7 @@ function Signup() {
                   handleChange("email", e);
                 }}
               />
-              {errors.email ? <FieldError errors={errors.email} /> : null}
+              {errors.email ? <FieldError>{errors.email[0]}</FieldError> : null}
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Password</FieldLabel>
@@ -191,7 +175,9 @@ function Signup() {
                 min={6}
                 max={50}
               />
-              {errors.password ? <FieldError errors={errors.password} /> : null}
+              {errors.password ? (
+                <FieldError>{errors.password[0]}</FieldError>
+              ) : null}
               {input.password.length < 6 && (
                 <FieldDescription>
                   Password must have at least 6 characters

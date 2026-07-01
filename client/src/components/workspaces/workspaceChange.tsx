@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { Button } from "../ui/button";
 import type React from "react";
 import { fetchApi } from "@/lib/utils";
@@ -26,16 +26,11 @@ import * as z from "zod";
 import type { Workspace } from "../../../../server/generated/prisma/client";
 import { SquarePen, FolderPlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
+import type ApiError from "../../../../server/src/lib/ApiError";
 
-interface ApiError {
-  message?: string;
-  status?: number;
-  code?: string;
-  details?: Record<string, any>;
-}
-interface WorkspaceMutation {
-  name: string;
-  id?: number;
+interface WorkspaceChangeProps {
+  HTTPMethod: "POST" | "PUT";
+  workspaceId: number;
 }
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -47,37 +42,29 @@ const schema = z.object({
     .max(150, "Workspace name is too long"),
 });
 
-interface ValidationError {
-  name?: { message: string }[];
-}
+type FormErrors = Record<string, string[] | undefined>;
 
-interface FormInput {
-  name: string;
-}
-
-function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
+function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { workspaceId } = useParams();
   const [open, setOpen] = useState(false);
-  const [errors, setErrors] = useState<ValidationError>({});
-  const [input, setInput] = useState<FormInput>({ name: "" });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [input, setInput] = useState({ name: "" });
   const mutation = useMutation({
-    mutationFn: async ({ name, id }: WorkspaceMutation) => {
+    mutationFn: async ({ name }: typeof input) => {
       const url =
         HTTPMethod === "POST"
           ? `${apiUrl}/workspaces`
-          : `${apiUrl}/workspaces/${id}`;
+          : `${apiUrl}/workspaces/${workspaceId}`;
 
       const res = await fetchApi<Workspace>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;
       return res.data;
     },
     onError(error: ApiError) {
+      if (error.status === 500) throw new Response(null, { status: 500 });
       if (error.status === 401) return navigate("/login");
-      if (error.details) {
-        setErrors(error.details);
-      }
+      setErrors(error.details);
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
@@ -93,39 +80,31 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
     const result = schema.safeParse(input);
     if (!result.success) {
       const errors = z.flattenError(result.error).fieldErrors;
-      if (errors.name) {
-        const nameErrors = errors.name.map((err) => ({
-          message: err,
-        }));
-        setErrors({ name: nameErrors });
-      }
+      setErrors(errors);
       return;
     }
-    const id =
-      HTTPMethod === "PUT" && workspaceId ? Number(workspaceId) : undefined;
-    mutation.mutate({ ...result.data, id });
+    setErrors({});
+    mutation.mutate(result.data);
   };
 
   const handleChange = (
-    field: keyof FormInput,
+    field: keyof typeof input,
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setInput((prev) => ({ ...prev, [field]: e.target.value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setErrors({});
       setInput({ name: "" });
     }
-
-    if (HTTPMethod === "PUT" && nextOpen && workspaceId) {
+    if (HTTPMethod === "PUT" && nextOpen) {
       const workspaces = queryClient.getQueryData<Workspace[]>(["workspaces"]);
-      const id = Number(workspaceId);
-      const workspace = workspaces?.find((ws) => ws.id === id);
+      const workspace = workspaces?.find((ws) => ws.id === workspaceId);
       if (workspace) setInput({ name: workspace.name });
     }
-
     setOpen(nextOpen);
   };
 
@@ -167,11 +146,12 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
                   name="name"
                   id="name"
                   value={input.name}
+                  disabled={mutation.isPending}
                   onChange={(e) => {
                     handleChange("name", e);
                   }}
                 />
-                <FieldError errors={errors.name} />
+                {errors.name?.[0] && <FieldError>{errors.name[0]}</FieldError>}
               </Field>
             </FieldGroup>
           </FieldSet>
