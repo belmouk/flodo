@@ -69,9 +69,9 @@ function Signup() {
       const result = schema.safeParse(data);
       if (!result.success) {
         const validationErrors = z.flattenError(result.error).fieldErrors;
-        let newErrors: ValidationError = {};
+        const newErrors: ValidationError = {};
         const FIELDS = ["firstName", "lastName", "password", "email"] as const;
-        for (let field of FIELDS) {
+        for (const field of FIELDS) {
           if (Object.keys(validationErrors).includes(field)) {
             newErrors[field] = validationErrors[field]!.map((err) => ({
               message: err,
@@ -135,7 +135,9 @@ function Signup() {
                 placeholder="John"
                 autoComplete="given-name"
                 value={input.firstName}
-                onChange={(e) => handleChange("firstName", e)}
+                onChange={(e) => {
+                  handleChange("firstName", e);
+                }}
                 min={1}
                 max={100}
               />
@@ -152,7 +154,9 @@ function Signup() {
                 placeholder="Doe"
                 autoComplete="family-name"
                 value={input.lastName}
-                onChange={(e) => handleChange("lastName", e)}
+                onChange={(e) => {
+                  handleChange("lastName", e);
+                }}
                 min={1}
                 max={100}
               />
@@ -167,7 +171,9 @@ function Signup() {
                 placeholder="john.doe@gmail.com"
                 autoComplete="email"
                 value={input.email}
-                onChange={(e) => handleChange("email", e)}
+                onChange={(e) => {
+                  handleChange("email", e);
+                }}
               />
               {errors.email ? <FieldError errors={errors.email} /> : null}
             </Field>
@@ -179,7 +185,9 @@ function Signup() {
                 name="password"
                 placeholder="********"
                 value={input.password}
-                onChange={(e) => handleChange("password", e)}
+                onChange={(e) => {
+                  handleChange("password", e);
+                }}
                 min={6}
                 max={50}
               />

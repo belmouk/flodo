@@ -14,7 +14,7 @@ type ApiResult<T> =
 export const fetchApi = async <T>(
   url: string,
   method: "POST" | "GET" | "PUT" | "DELETE",
-  body?: Record<string, any>,
+  body?: Record<string, string | number>,
   retry = false,
 ): Promise<ApiResult<T>> => {
   const res = await fetch(url, {

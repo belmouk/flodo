@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { Button } from "../ui/button";
 import type React from "react";
 import { fetchApi } from "@/lib/utils";
@@ -23,8 +23,8 @@ import {
 import { Input } from "../ui/input";
 import { useState } from "react";
 import * as z from "zod";
-import type { Workspace } from "../../../../server/generated/prisma/client";
-import { SquarePen, FolderPlus } from "lucide-react";
+import type { Project } from "../../../../server/generated/prisma/client";
+import { SquarePen, FilePlusCorner } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 
 interface ApiError {
@@ -33,9 +33,9 @@ interface ApiError {
   code?: string;
   details?: Record<string, any>;
 }
-interface WorkspaceMutation {
+
+interface ProjectMutation {
   name: string;
-  id?: number;
 }
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -43,8 +43,8 @@ const apiUrl = import.meta.env.VITE_API_URL;
 const schema = z.object({
   name: z
     .string()
-    .min(1, "Workspace name is required")
-    .max(150, "Workspace name is too long"),
+    .min(1, "Project name is required")
+    .max(150, "Project name is too long"),
 });
 
 interface ValidationError {
@@ -55,21 +55,36 @@ interface FormInput {
   name: string;
 }
 
-function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
+type ProjectChangeProps =
+  | {
+      HTTPMethod: "PUT";
+      projectId: number;
+      workspaceId: number;
+    }
+  | {
+      HTTPMethod: "POST";
+      projectId?: undefined;
+      workspaceId: number;
+    };
+
+function ProjectChange({
+  HTTPMethod,
+  projectId,
+  workspaceId,
+}: ProjectChangeProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { workspaceId } = useParams();
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<ValidationError>({});
   const [input, setInput] = useState<FormInput>({ name: "" });
   const mutation = useMutation({
-    mutationFn: async ({ name, id }: WorkspaceMutation) => {
+    mutationFn: async ({ name }: ProjectMutation) => {
       const url =
         HTTPMethod === "POST"
-          ? `${apiUrl}/workspaces`
-          : `${apiUrl}/workspaces/${id}`;
+          ? `${apiUrl}/workspaces/${workspaceId}/projects`
+          : `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}`;
 
-      const res = await fetchApi<Workspace>(url, HTTPMethod, { name });
+      const res = await fetchApi<Project>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;
       return res.data;
     },
@@ -79,12 +94,13 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
         setErrors(error.details);
       }
     },
-    onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["workspace", workspaceId.toString()],
+      });
       setInput({ name: "" });
       setErrors({});
       setOpen(false);
-      navigate(`/workspaces/${data.id}`);
     },
   });
 
@@ -101,9 +117,7 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
       }
       return;
     }
-    const id =
-      HTTPMethod === "PUT" && workspaceId ? Number(workspaceId) : undefined;
-    mutation.mutate({ ...result.data, id });
+    mutation.mutate({ ...result.data });
   };
 
   const handleChange = (
@@ -113,19 +127,20 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
     setInput((prev) => ({ ...prev, [field]: e.target.value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setErrors({});
       setInput({ name: "" });
     }
-
-    if (HTTPMethod === "PUT" && nextOpen && workspaceId) {
-      const workspaces = queryClient.getQueryData<Workspace[]>(["workspaces"]);
-      const id = Number(workspaceId);
-      const workspace = workspaces?.find((ws) => ws.id === id);
-      if (workspace) setInput({ name: workspace.name });
+    if (HTTPMethod === "PUT" && nextOpen) {
+      const projects = queryClient.getQueryData<Project[]>([
+        "workspace",
+        workspaceId.toString(),
+      ]);
+      const project = projects?.find((pj) => pj.id === projectId);
+      if (project) setInput({ name: project.name });
     }
-
     setOpen(nextOpen);
   };
 
@@ -138,7 +153,7 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
               {HTTPMethod === "PUT" ? (
                 <SquarePen className="size-6" />
               ) : (
-                <FolderPlus className="size-6" />
+                <FilePlusCorner className="size-6" />
               )}
             </Button>
           </DialogTrigger>
@@ -149,12 +164,12 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {HTTPMethod === "PUT" ? "Edit Workspace" : "New Workspace"}
+            {HTTPMethod === "PUT" ? "Edit Project" : "New Project"}
           </DialogTitle>
           <DialogDescription className="sr-only">
             {HTTPMethod === "PUT"
-              ? "Update your workspace name and details."
-              : "Create a new workspace by entering a name."}
+              ? "Update your project name and details."
+              : "Create a new project by entering a name."}
           </DialogDescription>
         </DialogHeader>
         <form method="POST" onSubmit={handleSubmit}>
@@ -191,4 +206,4 @@ function WorkspaceChange({ HTTPMethod }: { HTTPMethod: "POST" | "PUT" }) {
   );
 }
 
-export default WorkspaceChange;
+export default ProjectChange;

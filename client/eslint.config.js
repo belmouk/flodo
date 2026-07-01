@@ -22,5 +22,12 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        { allowNumber: true },
+      ],
+      "@typescript-eslint/only-throw-error": ["error", { allow: ["Response"] }],
+    },
   },
 ]);

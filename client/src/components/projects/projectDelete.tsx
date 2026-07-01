@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { Button } from "../ui/button";
 import type React from "react";
 import { Trash2 } from "lucide-react";
@@ -13,45 +13,50 @@ interface ApiError {
   details?: Record<string, any>;
 }
 
+type ProjectDeleteProps = {
+  projectId: number;
+  workspaceId: number;
+  setProjectId: React.Dispatch<React.SetStateAction<number | undefined>>;
+};
+
 const apiUrl = import.meta.env.VITE_API_URL;
 
-function WorkspaceDelete({ ...props }: React.ComponentProps<"button">) {
+function ProjectDelete({
+  projectId,
+  workspaceId,
+  setProjectId,
+}: ProjectDeleteProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { workspaceId } = useParams();
-  const deleteWorkspace = useMutation({
-    mutationFn: async (workspaceId: number) => {
+  const deleteProject = useMutation({
+    mutationFn: async () => {
       const result = await fetchApi<undefined>(
-        `${apiUrl}/workspaces/${workspaceId}`,
+        `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}`,
         "DELETE",
       );
       if (result.success) return;
       throw result.error;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-      navigate("/workspaces");
+      await queryClient.invalidateQueries({
+        queryKey: ["workspace", workspaceId.toString()],
+      });
+      setProjectId(undefined);
     },
     onError(error: ApiError) {
       if (error.status === 401) return navigate("/login");
     },
   });
 
-  const handleClick = () => {
-    if (workspaceId) {
-      const id = parseInt(workspaceId, 10);
-      deleteWorkspace.mutate(id);
-    }
-  };
-
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           className="hover:cursor-pointer"
-          disabled={deleteWorkspace.isPending}
-          onClick={handleClick}
-          {...props}
+          disabled={deleteProject.isPending}
+          onClick={() => {
+            deleteProject.mutate();
+          }}
           variant={"ghost"}
         >
           <Trash2 className="size-6 text-red-500" />
@@ -62,4 +67,4 @@ function WorkspaceDelete({ ...props }: React.ComponentProps<"button">) {
   );
 }
 
-export default WorkspaceDelete;
+export default ProjectDelete;

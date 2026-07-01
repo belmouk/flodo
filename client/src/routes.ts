@@ -9,6 +9,7 @@ import type { User } from "../../server/src/users/users.schema";
 import Workspaces from "./pages/Workspaces";
 import Workspace from "./pages/Workspace";
 import { fetchApi } from "./lib/utils";
+import Project from "./pages/Project";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -49,7 +50,10 @@ const routes = [
             Component: Workspaces,
             children: [{ path: ":workspaceId", Component: Workspace }],
           },
-          { path: "workspaces/:workspaceId/projects/:projectId" },
+          {
+            path: "workspaces/:workspaceId/projects/:projectId",
+            Component: Project,
+          },
         ],
       },
     ],

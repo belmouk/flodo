@@ -1,13 +1,12 @@
 import { Outlet, Link, useNavigate } from "react-router";
 import { useLoaderData } from "react-router";
 import type { LoaderData } from "@/routes";
-import { Button } from "@/components/ui/button";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 function ProtectedLayout() {
   const user = useLoaderData<LoaderData>();
-  let navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleLogOut = async () => {
     try {

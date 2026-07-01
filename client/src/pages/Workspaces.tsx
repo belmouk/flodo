@@ -69,7 +69,7 @@ function Workspaces() {
       {workspaceId && (
         <section>
           <h2 className="font-bold text-2xl mt-8">Projects</h2>
-          <Outlet />
+          <Outlet key={workspaceId} />
         </section>
       )}
     </div>

@@ -54,9 +54,9 @@ function Login() {
       const result = schema.safeParse(data);
       if (!result.success) {
         const validationErrors = z.flattenError(result.error).fieldErrors;
-        let newErrors: ValidationError = {};
+        const newErrors: ValidationError = {};
         const FIELDS = ["password", "email"] as const;
-        for (let field of FIELDS) {
+        for (const field of FIELDS) {
           if (Object.keys(validationErrors).includes(field)) {
             newErrors[field] = validationErrors[field]!.map((err) => ({
               message: err,
@@ -73,7 +73,6 @@ function Login() {
         });
         if (!res.ok) {
           const errorData = await res.json();
-
           throw errorData;
         }
       }
@@ -134,7 +133,9 @@ function Login() {
                 placeholder="john.doe@gmail.com"
                 autoComplete="email"
                 value={input.email}
-                onChange={(e) => handleChange("email", e)}
+                onChange={(e) => {
+                  handleChange("email", e);
+                }}
               />
               {errors.email ? <FieldError errors={errors.email} /> : null}
             </Field>
@@ -146,7 +147,9 @@ function Login() {
                 name="password"
                 placeholder="********"
                 value={input.password}
-                onChange={(e) => handleChange("password", e)}
+                onChange={(e) => {
+                  handleChange("password", e);
+                }}
                 min={6}
                 max={50}
               />
