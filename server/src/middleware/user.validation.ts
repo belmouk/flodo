@@ -11,7 +11,7 @@ import * as z from "zod";
 export const validateUserSignup = (
   req: Request<any, any, UserSignup>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const result = UserSignupSchema.safeParse(req.body);
   if (result.success) {
@@ -26,7 +26,7 @@ export const validateUserSignup = (
 export const validateUserLogin = (
   req: Request<any, any, UserLogin>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const result = UserLoginSchema.safeParse(req.body);
   if (result.success) {

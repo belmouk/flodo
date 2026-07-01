@@ -15,7 +15,7 @@ router.delete("/:projectId", controller.destroy);
 router.use(
   "/:projectId/lists",
   controller.ensureProjectMembership,
-  listsRouter,
+  listsRouter
 );
 
 export default router;

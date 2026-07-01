@@ -104,7 +104,7 @@ it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", as
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
     .get(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks`,
+      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks`
     )
     .set("Cookie", cookies);
 
@@ -128,7 +128,7 @@ it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:tas
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
     .get(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`,
+      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`
     )
     .set("Cookie", cookies);
 
@@ -141,7 +141,7 @@ it("POST api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", a
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
     .post(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks`,
+      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks`
     )
     .send({
       title: "task1",
@@ -174,7 +174,7 @@ it("PUT api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:tas
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
     .put(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`,
+      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`
     )
     .send({ title: "task10" })
     .set("Cookie", cookies);
@@ -203,7 +203,7 @@ it("DELETE api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
     .delete(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`,
+      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`
     )
     .set("Cookie", cookies);
   const expectedTask = await prisma.task.findUnique({

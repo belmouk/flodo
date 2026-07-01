@@ -12,14 +12,14 @@ router.get("/:workspaceId", controller.show);
 router.put(
   "/:workspaceId",
   controller.validateWorkspaceInput,
-  controller.update,
+  controller.update
 );
 router.delete("/:workspaceId", controller.destroy);
 
 router.use(
   "/:workspaceId/projects",
   controller.ensureWorkspaceMembership,
-  projectsRouter,
+  projectsRouter
 );
 
 export default router;

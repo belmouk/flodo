@@ -2,7 +2,7 @@ import ApiError from "../lib/ApiError.js";
 import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcrypt";
 import { UserLogin, UserSignup } from "./auth.schema.js";
-import { jwtVerify, SignJWT, errors } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
 import { RefreshToken } from "../prisma/client.js";
@@ -147,16 +147,12 @@ export const validateRefreshToken = async (token: string): Promise<Result> => {
 };
 
 export const deleteRefreshToken = async (token: string) => {
-  try {
-    const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
-    const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
-      audience: CONFIG.JWT_AUDIENCE,
-      issuer: CONFIG.JWT_ISSUER,
-    });
-    await prisma.refreshToken.deleteMany({ where: { jti: payload.jti } });
-  } catch (err) {
-    throw err;
-  }
+  const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
+  const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
+    audience: CONFIG.JWT_AUDIENCE,
+    issuer: CONFIG.JWT_ISSUER,
+  });
+  await prisma.refreshToken.deleteMany({ where: { jti: payload.jti } });
 };
 
 export const getUserId = async (token: string) => {

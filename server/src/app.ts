@@ -21,7 +21,7 @@ app.use((req: Request, res: Response) =>
     message: "Resource not found",
     code: "ResourceNotFound",
     details: {},
-  }),
+  })
 );
 
 app.use(
@@ -29,7 +29,7 @@ app.use(
     err: ErrorRequestHandler,
     req: Request,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ) => {
     console.error(err);
     if (err instanceof ApiError) {
@@ -47,7 +47,7 @@ app.use(
         status: 500,
       });
     }
-  },
+  }
 );
 
 export default app;

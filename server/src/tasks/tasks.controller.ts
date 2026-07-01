@@ -22,7 +22,7 @@ export const validateTaskRoute = async (
   req: Request,
   res: Response,
   next: NextFunction,
-  taskId: string,
+  taskId: string
 ) => {
   const schema = z.coerce.number().int().positive();
   const result = schema.safeParse(taskId);
@@ -42,7 +42,7 @@ export const create = async (
     any,
     { title: string; description: string; dueAt: Date; assigneeId: number }
   >,
-  res: Response,
+  res: Response
 ) => {
   const task = await services.create({
     listId: req.listId,
@@ -52,10 +52,10 @@ export const create = async (
   return res.json(task);
 };
 
-export const validateTaskCreation = async (
+export const validateTaskCreation = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const schema = z.object({
     title: z
@@ -81,17 +81,17 @@ export const validateTaskCreation = async (
       "Invalid task creation input",
       400,
       "InputValidationError",
-      errors,
+      errors
     );
   }
   req.body = result.data;
   return next();
 };
 
-export const validateTaskUpdate = async (
+export const validateTaskUpdate = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const schema = z.object({
     title: z
@@ -127,7 +127,7 @@ export const validateTaskUpdate = async (
       "Invalid task update input",
       400,
       "InputValidationError",
-      errors,
+      errors
     );
   }
   req.body = result.data;
@@ -147,7 +147,7 @@ export const update = async (
       listId: number;
     }
   >,
-  res: Response,
+  res: Response
 ) => {
   const hasEditRights = await services.hasEditRights(req.userId, req.taskId);
   if (!hasEditRights) {

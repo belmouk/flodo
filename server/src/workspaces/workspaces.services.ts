@@ -27,15 +27,7 @@ export const create = async ({
   return workspace;
 };
 
-export const update = async ({
-  name,
-  id,
-  userId,
-}: {
-  name: string;
-  id: number;
-  userId: number;
-}) => {
+export const update = async ({ name, id }: { name: string; id: number }) => {
   const workspace = await prisma.workspace.findUnique({
     where: { id },
   });
@@ -67,7 +59,7 @@ export const destroy = async (workspaceId: number) => {
 
 export const isWorkspaceMember = async (
   userId: number,
-  workspaceId: number,
+  workspaceId: number
 ) => {
   const record = await prisma.workspaceUser.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },

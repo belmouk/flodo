@@ -7,7 +7,7 @@ import { getById } from "../users/users.services.js";
 
 export const signup = async (
   req: Request<any, any, UserSignup>,
-  res: Response,
+  res: Response
 ) => {
   const user = await services.createUser(req.body);
   return res.status(201).json(user);
@@ -15,7 +15,7 @@ export const signup = async (
 
 export const login = async (
   req: Request<any, any, UserLogin>,
-  res: Response,
+  res: Response
 ) => {
   const user = await services.verifyLoginCredentials(req.body);
 
@@ -70,7 +70,7 @@ export const refresh = async (req: Request, res: Response) => {
     throw new ApiError("Invalid token", 401, "InvalidRefreshToken");
   }
   const { refreshToken, accessToken } = await services.createNewTokens(
-    validatedRefreshToken,
+    validatedRefreshToken
   );
 
   res.cookie("refreshToken", refreshToken, {
@@ -93,7 +93,7 @@ export const refresh = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
   console.log(req.cookies);
-  const refreshToken = req.cookies?.refreshToken;
+  const refreshToken = req.cookies?.refreshToken as string | undefined;
   if (refreshToken) {
     await services.deleteRefreshToken(refreshToken);
     res.clearCookie("refreshToken", {

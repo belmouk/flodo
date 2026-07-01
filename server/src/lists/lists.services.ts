@@ -14,7 +14,7 @@ export const update = async (id: number, name: string) => {
 
 export const userIsProjectMember = async (
   userId: number,
-  projectId: number,
+  projectId: number
 ) => {
   const user = await prisma.projectUser.findUnique({
     where: { userId_projectId: { userId, projectId } },

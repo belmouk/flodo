@@ -71,7 +71,7 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
       setInput({ name: "" });
       setErrors({});
       setOpen(false);
-      navigate(`/workspaces/${data.id}`);
+      await navigate(`/workspaces/${data.id}`);
     },
   });
 

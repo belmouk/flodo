@@ -1,21 +1,28 @@
 import { Outlet, Link, useNavigate } from "react-router";
 import { useLoaderData } from "react-router";
 import type { LoaderData } from "@/routes";
+import { useState } from "react";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 function ProtectedLayout() {
   const user = useLoaderData<LoaderData>();
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogOut = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
       await fetch(`${apiUrl}/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
+    } catch (error) {
+      console.error(`Logout failed: ${error as Error}`);
+      setIsLoggingOut(false);
     } finally {
-      navigate("/", { replace: true });
+      await navigate("/", { replace: true });
     }
   };
 
@@ -28,8 +35,12 @@ function ProtectedLayout() {
               <Link to="/workspaces">Workspaces</Link>
             </li>
             <li>
-              <button onClick={handleLogOut} className="hover:cursor-pointer">
-                Log out
+              <button
+                onClick={() => void handleLogOut()}
+                className="hover:cursor-pointer"
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? "Logging out..." : "Log out"}
               </button>
             </li>
           </ul>

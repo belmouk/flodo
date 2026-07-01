@@ -6,9 +6,9 @@ import ApiError from "../lib/ApiError.js";
 export const ensureAuth = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
-  const accessToken: string = req.cookies?.accessToken;
+  const accessToken: string | undefined = req.cookies?.accessToken;
 
   if (accessToken) {
     const encodedSecret = new TextEncoder().encode(CONFIG.ACCESS_TOKEN_SECRET);

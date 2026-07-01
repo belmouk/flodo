@@ -27,19 +27,20 @@ export const fetchApi = async <T>(
 
   if (res.ok) {
     if (res.status === 204) return { success: true, data: undefined as T };
-    return { success: true, data: await res.json() };
+    return { success: true, data: (await res.json()) as T };
   }
-  if (res.status === 400) return { success: false, error: await res.json() };
+  if (res.status === 400)
+    return { success: false, error: (await res.json()) as ApiError };
   if (res.status !== 401) throw new Response(null, { status: res.status });
 
   if (retry) {
     return {
       success: false,
-      error: await res.json(),
+      error: (await res.json()) as ApiError,
     };
   }
 
-  const err = await res.json();
+  const err = (await res.json()) as ApiError;
 
   if (err.code !== "ExpiredAccessToken" && err.code !== "MissingAccessToken")
     return {
@@ -55,7 +56,7 @@ export const fetchApi = async <T>(
   if (!refreshRes.ok)
     return {
       success: false,
-      error: await refreshRes.json(),
+      error: (await refreshRes.json()) as ApiError,
     };
 
   return fetchApi(url, method, body, true);

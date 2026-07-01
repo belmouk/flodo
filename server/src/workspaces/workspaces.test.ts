@@ -74,8 +74,8 @@ it("GET workspaces", async () => {
 
   expect(res.status).toBe(200);
   expect(res.body).toHaveLength(expectedWorkspaces.length);
-  expect(res.body[0]).toMatchObject(expectedWorkspaces[0]);
-  expect(res.body[1]).toMatchObject(expectedWorkspaces[1]);
+  expect(res.body[0]).toMatchObject(expectedWorkspaces[0]!);
+  expect(res.body[1]).toMatchObject(expectedWorkspaces[1]!);
 });
 
 it("POST workplaces", async () => {

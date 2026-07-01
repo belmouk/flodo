@@ -17,7 +17,7 @@ export const show = async (req: Request, res: Response) => {
 
 export const create = async (
   req: Request<any, any, { name: string }>,
-  res: Response,
+  res: Response
 ) => {
   const project = await services.create({
     workspaceId: req.workspaceId,
@@ -29,11 +29,11 @@ export const create = async (
 
 export const update = async (
   req: Request<any, any, { name: string }>,
-  res: Response,
+  res: Response
 ) => {
   const UserHasEditRights = await services.hasEditRights(
     req.projectId,
-    req.userId,
+    req.userId
   );
   if (UserHasEditRights) {
     const project = await services.update(req.projectId, req.body.name);
@@ -46,7 +46,7 @@ export const update = async (
 export const destroy = async (req: Request, res: Response) => {
   const UserHasEditRights = await services.hasEditRights(
     req.projectId,
-    req.userId,
+    req.userId
   );
   if (UserHasEditRights) {
     await services.destroy(req.projectId);
@@ -60,7 +60,7 @@ export const validateProjectRoute = async (
   req: Request,
   res: Response,
   next: NextFunction,
-  projectId: string,
+  projectId: string
 ) => {
   const schema = z.coerce.number().int().positive();
 
@@ -79,7 +79,7 @@ export const validateProjectRoute = async (
 export const validateProjectInput = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const schema = z.object({
     name: z
@@ -99,7 +99,7 @@ export const validateProjectInput = (
 export const ensureProjectMembership = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   if (!(await services.userIsProjectMember(req.userId, req.projectId)))
     throw new ApiError("Resource not accessible", 403, "UnAuthorizedAccess");

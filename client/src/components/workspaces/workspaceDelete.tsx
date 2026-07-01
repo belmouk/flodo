@@ -26,7 +26,7 @@ function WorkspaceDelete({ workspaceId }: WorkspaceDeleteProps) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-      navigate("/workspaces");
+      await navigate("/workspaces");
     },
     onError(error: ApiError) {
       if (error.status === 500) throw new Response(null, { status: 500 });

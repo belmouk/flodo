@@ -14,14 +14,14 @@ export const show = async (req: Request, res: Response) => {
     throw new ApiError(
       "Workspace does not exist",
       404,
-      "WorkspaceDoesNotExist",
+      "WorkspaceDoesNotExist"
     );
   return res.json(workspace);
 };
 
 export const create = async (
   req: Request<any, any, { name: string }>,
-  res: Response,
+  res: Response
 ) => {
   const workspace = await services.create({
     name: req.body.name,
@@ -32,18 +32,17 @@ export const create = async (
 
 export const update = async (
   req: Request<any, any, { name: string }>,
-  res: Response,
+  res: Response
 ) => {
   const hasUpdateRights = await services.hasUpdateRights(
     req.userId,
-    req.workspaceId,
+    req.workspaceId
   );
   if (!hasUpdateRights)
     throw new ApiError("Action not permitted.", 403, "UnAuthorizedUser");
   const workspace = await services.update({
     name: req.body.name,
     id: req.workspaceId,
-    userId: req.userId,
   });
   return res.json(workspace);
 };
@@ -51,7 +50,7 @@ export const update = async (
 export const destroy = async (req: Request, res: Response) => {
   const hasDeleteRights = await services.hasDeleteRights(
     req.userId,
-    req.workspaceId,
+    req.workspaceId
   );
   if (!hasDeleteRights) {
     throw new ApiError("Action not permitted.", 403, "UnAuthorizedUser");
@@ -63,7 +62,7 @@ export const destroy = async (req: Request, res: Response) => {
 export const ensureWorkspaceMembership = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   if (await services.isWorkspaceMember(req.userId, req.workspaceId)) {
     next();
@@ -72,11 +71,11 @@ export const ensureWorkspaceMembership = async (
   }
 };
 
-export const validateWorkspaceRoute = async (
+export const validateWorkspaceRoute = (
   req: Request,
   res: Response,
   next: NextFunction,
-  workspaceId: string,
+  workspaceId: string
 ) => {
   const schema = z.coerce.number().int().positive();
 
@@ -91,7 +90,7 @@ export const validateWorkspaceRoute = async (
 export const validateWorkspaceInput = (
   req: Request<any, any, { name: string }>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const schema = z.object({
     name: z
@@ -107,7 +106,7 @@ export const validateWorkspaceInput = (
       "Invalid workspace creation input",
       400,
       "InputValidationError",
-      errors,
+      errors
     );
   }
   req.body = result.data;

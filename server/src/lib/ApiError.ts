@@ -6,7 +6,7 @@ class ApiError extends Error {
     message: string,
     status: number,
     code: string,
-    details: Record<string, string[] | undefined> = {},
+    details: Record<string, string[] | undefined> = {}
   ) {
     super(message);
     this.status = status;

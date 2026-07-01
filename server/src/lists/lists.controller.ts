@@ -7,7 +7,7 @@ export const validateListRoute = async (
   req: Request,
   res: Response,
   next: NextFunction,
-  listId: string,
+  listId: string
 ) => {
   const schema = z.coerce.number().int().positive();
   const result = schema.safeParse(listId);
@@ -22,7 +22,7 @@ export const validateListRoute = async (
 export const validateListInput = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const schema = z.object({
     name: z
@@ -55,7 +55,7 @@ export const show = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   const isMember = await services.userIsProjectMember(
     req.userId,
-    req.projectId,
+    req.projectId
   );
   if (!isMember)
     throw new ApiError("Unauthorized action", 403, "UnAuthorizedAction");
@@ -71,7 +71,7 @@ export const create = async (req: Request, res: Response) => {
 export const destroy = async (req: Request, res: Response) => {
   const isMember = await services.userIsProjectMember(
     req.userId,
-    req.projectId,
+    req.projectId
   );
   if (!isMember)
     throw new ApiError("Unauthorized action", 403, "UnAuthorizedAction");

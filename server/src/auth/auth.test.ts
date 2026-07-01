@@ -26,7 +26,7 @@ describe("POST auth/signup", () => {
   ];
 
   const capitalize = (name: string) => {
-    return name[0].toUpperCase() + name.slice(1).toLowerCase();
+    if (name[0]) return name[0].toUpperCase() + name.slice(1).toLowerCase();
   };
 
   it("adds a new user", async () => {
@@ -127,21 +127,21 @@ describe("POST auth/refresh", () => {
     await agent.post("/api/auth/login").send({ email, password });
     const firstAccessToken = agent.jar.getCookie(
       "accessToken",
-      CookieAccessInfo.All,
+      CookieAccessInfo.All
     );
     const firstRefreshToken = agent.jar.getCookie(
       "refreshToken",
-      CookieAccessInfo.All,
+      CookieAccessInfo.All
     );
 
     await agent.post("/api/auth/refresh");
     const secondAccessToken = agent.jar.getCookie(
       "accessToken",
-      CookieAccessInfo.All,
+      CookieAccessInfo.All
     );
     const secondRefreshToken = agent.jar.getCookie(
       "refreshToken",
-      CookieAccessInfo.All,
+      CookieAccessInfo.All
     );
 
     expect(secondAccessToken).not.toBe(firstAccessToken);
@@ -204,9 +204,9 @@ it("POST auth/logout", async () => {
   await agent.post("/api/auth/logout");
 
   expect(
-    agent.jar.getCookie("refreshToken", CookieAccessInfo.All),
+    agent.jar.getCookie("refreshToken", CookieAccessInfo.All)
   ).toBeUndefined();
   expect(
-    agent.jar.getCookie("accessToken", CookieAccessInfo.All),
+    agent.jar.getCookie("accessToken", CookieAccessInfo.All)
   ).toBeUndefined();
 });

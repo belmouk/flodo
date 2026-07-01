@@ -13,15 +13,10 @@ import React, { useState } from "react";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import type { User } from "../../../server/src/users/users.schema";
+import ApiError from "../../../server/src/lib/ApiError";
 
 type FormErrors = Record<string, string[] | undefined>;
-
-interface ApiError {
-  message?: string;
-  status?: number;
-  code?: string;
-  details?: Record<string, any>;
-}
 
 const schema = z.object({
   firstName: z
@@ -65,19 +60,16 @@ function Signup() {
         body: JSON.stringify(data),
         headers: { "Content-type": "application/json" },
       });
-      if (res.ok) return res.json();
-      const errorData = await res.json();
+      if (res.ok) return (await res.json()) as User;
+      const errorData = (await res.json()) as ApiError;
       throw errorData;
     },
-
     onSuccess: () => {
       return navigate("/login");
     },
     onError: (error: ApiError) => {
       if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.details) {
-        setErrors(error.details);
-      }
+      setErrors(error.details);
     },
   });
 
@@ -94,7 +86,7 @@ function Signup() {
   };
 
   const handleChange = (
-    field: string,
+    field: keyof typeof input,
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const newInput = { ...input, [field]: e.target.value };
@@ -116,16 +108,17 @@ function Signup() {
                 name="firstName"
                 placeholder="John"
                 autoComplete="given-name"
+                min={1}
+                max={100}
+                disabled={mutation.isPending}
                 value={input.firstName}
                 onChange={(e) => {
                   handleChange("firstName", e);
                 }}
-                min={1}
-                max={100}
               />
-              {errors.firstName ? (
+              {errors.firstName?.[0] && (
                 <FieldError>{errors.firstName[0]}</FieldError>
-              ) : null}
+              )}
             </Field>
             <Field>
               <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
@@ -136,15 +129,16 @@ function Signup() {
                 placeholder="Doe"
                 autoComplete="family-name"
                 value={input.lastName}
+                disabled={mutation.isPending}
                 onChange={(e) => {
                   handleChange("lastName", e);
                 }}
                 min={1}
                 max={100}
               />
-              {errors.lastName ? (
+              {errors.lastName?.[0] && (
                 <FieldError>{errors.lastName[0]}</FieldError>
-              ) : null}
+              )}
             </Field>
             <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -154,12 +148,13 @@ function Signup() {
                 name="email"
                 placeholder="john.doe@gmail.com"
                 autoComplete="email"
+                disabled={mutation.isPending}
                 value={input.email}
                 onChange={(e) => {
                   handleChange("email", e);
                 }}
               />
-              {errors.email ? <FieldError>{errors.email[0]}</FieldError> : null}
+              {errors.email?.[0] && <FieldError>{errors.email[0]}</FieldError>}
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Password</FieldLabel>
@@ -167,6 +162,7 @@ function Signup() {
                 type="password"
                 id="password"
                 name="password"
+                disabled={mutation.isPending}
                 placeholder="********"
                 value={input.password}
                 onChange={(e) => {
@@ -175,9 +171,9 @@ function Signup() {
                 min={6}
                 max={50}
               />
-              {errors.password ? (
+              {errors.password?.[0] && (
                 <FieldError>{errors.password[0]}</FieldError>
-              ) : null}
+              )}
               {input.password.length < 6 && (
                 <FieldDescription>
                   Password must have at least 6 characters

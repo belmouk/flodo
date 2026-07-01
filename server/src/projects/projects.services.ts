@@ -72,7 +72,7 @@ export const destroy = async (projectId: number) => {
 
 export const userIsProjectMember = async (
   userId: number,
-  projectId: number,
+  projectId: number
 ) => {
   const project = await prisma.projectUser.findUnique({
     where: { userId_projectId: { userId, projectId } },
