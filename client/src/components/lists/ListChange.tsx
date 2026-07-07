@@ -23,19 +23,24 @@ import {
 import { Input } from "../ui/input";
 import { useState } from "react";
 import * as z from "zod";
-import type { Workspace } from "../../../../server/generated/prisma/client";
-import { SquarePen, FolderPlus } from "lucide-react";
+import type { List } from "../../../../server/generated/prisma/client";
+import { SquarePen, CirclePlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type ApiError from "../../../../server/src/lib/ApiError";
+import type { ProjectWithLists } from "@/pages/Project";
 
-type WorkspaceChangeProps =
+type ListChangeProps =
   | {
       HTTPMethod: "POST";
-      workspaceId?: number;
+      workspaceId: number;
+      projectId: number;
+      listId?: number;
     }
   | {
       HTTPMethod: "PUT";
       workspaceId: number;
+      projectId: number;
+      listId: number;
     };
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -43,13 +48,18 @@ const apiUrl = import.meta.env.VITE_API_URL;
 const schema = z.object({
   name: z
     .string()
-    .min(1, "Workspace name is required")
-    .max(150, "Workspace name is too long"),
+    .min(1, "List name is required")
+    .max(150, "List name is too long"),
 });
 
 type FormErrors = Record<string, string[] | undefined>;
 
-function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
+function ListChange({
+  HTTPMethod,
+  listId,
+  workspaceId,
+  projectId,
+}: ListChangeProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -59,10 +69,10 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
     mutationFn: async ({ name }: typeof input) => {
       const url =
         HTTPMethod === "POST"
-          ? `${apiUrl}/workspaces`
-          : `${apiUrl}/workspaces/${workspaceId}`;
+          ? `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists`
+          : `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}`;
 
-      const res = await fetchApi<Workspace>(url, HTTPMethod, { name });
+      const res = await fetchApi<List>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;
       return res.data;
     },
@@ -72,11 +82,10 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
       setErrors(error.details);
     },
     onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      await queryClient.invalidateQueries({ queryKey: ["lists"] });
       setInput({ name: "" });
       setErrors({});
       setOpen(false);
-      await navigate(`/workspaces/${data.id}`);
     },
   });
 
@@ -106,9 +115,9 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
       setInput({ name: "" });
     }
     if (HTTPMethod === "PUT" && nextOpen) {
-      const workspaces = queryClient.getQueryData<Workspace[]>(["workspaces"]);
-      const workspace = workspaces?.find((ws) => ws.id === workspaceId);
-      if (workspace) setInput({ name: workspace.name });
+      const project = queryClient.getQueryData<ProjectWithLists>(["lists"]);
+      const list = project?.lists?.find((ls) => ls.id === listId);
+      if (list) setInput({ name: list.name });
     }
     setOpen(nextOpen);
   };
@@ -122,7 +131,7 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
               {HTTPMethod === "PUT" ? (
                 <SquarePen className="size-6" />
               ) : (
-                <FolderPlus className="size-6" />
+                <CirclePlus className="size-6" />
               )}
             </Button>
           </DialogTrigger>
@@ -133,12 +142,12 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {HTTPMethod === "PUT" ? "Edit Workspace" : "New Workspace"}
+            {HTTPMethod === "PUT" ? "Edit List" : "New List"}
           </DialogTitle>
           <DialogDescription className="sr-only">
             {HTTPMethod === "PUT"
-              ? "Update your workspace name and details."
-              : "Create a new workspace by entering a name."}
+              ? "Update your list name and details."
+              : "Create a new list by entering a name."}
           </DialogDescription>
         </DialogHeader>
         <form method="POST" onSubmit={handleSubmit}>
@@ -176,4 +185,4 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
   );
 }
 
-export default WorkspaceChange;
+export default ListChange;
