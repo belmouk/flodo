@@ -1,9 +1,10 @@
 import type React from "react";
 import type { List, Task } from "../../../server/generated/prisma/client";
-import TaskItem from "./task";
+import TaskItem from "./taskItem";
 import ControlPanel from "./controlPanel";
 import ListUpdate from "./lists/ListUpdate";
 import ListDelete from "./lists/ListDelete";
+import TaskCreate from "./tasks/TaskCreate";
 
 type ListItemProps = React.ComponentProps<"li"> & {
   list: List & { tasks: Task[] };
@@ -33,9 +34,21 @@ function ListItem({ workspaceId, projectId, list }: ListItemProps) {
       </ul>
       <ul>
         {list.tasks.map((task) => (
-          <TaskItem key={task.id} task={task} />
+          <TaskItem
+            key={task.id}
+            task={task}
+            workspaceId={workspaceId}
+            projectId={projectId}
+            listId={list.id}
+          />
         ))}
-        <li>Add task</li>
+        <li className="flex justify-center my-6">
+          <TaskCreate
+            workspaceId={workspaceId}
+            projectId={projectId}
+            listId={list.id}
+          />
+        </li>
       </ul>
     </li>
   );
