@@ -112,13 +112,25 @@ export const validateTaskUpdate = (
       .positive("AssigneeId must be a positive integer")
       .optional(),
     status: z
-      .literal(["WIP", "DONE", "OVERDUE"], "Task status not found")
+      .enum(["WIP", "DONE", "OVERDUE"], "Task status not found")
       .optional(),
     listId: z.coerce
       .number()
       .int()
       .positive("listId must be a positive integer")
       .optional(),
+    location: z.object({
+      before: z.coerce
+        .number()
+        .int()
+        .nonnegative("Position before must be a positive integer")
+        .nullable(),
+      after: z.coerce
+        .number()
+        .int()
+        .nonnegative("Position after must be a positive integer")
+        .nullable(),
+    }),
   });
   const result = schema.safeParse(req.body);
   if (!result.success) {
@@ -134,6 +146,8 @@ export const validateTaskUpdate = (
   return next();
 };
 
+export type Location = { before: number | null; after: number | null };
+
 export const update = async (
   req: Request<
     any,
@@ -144,6 +158,7 @@ export const update = async (
       dueAt?: Date;
       assigneeId?: number;
       status?: TaskStatus;
+      location?: Location;
       listId: number;
     }
   >,

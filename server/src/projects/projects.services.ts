@@ -21,7 +21,10 @@ export const getById = async (
   return await prisma.project.findUnique({
     where: { id, workspaceId },
     include: include.tasks
-      ? { lists: { include: { tasks: true } }, members: include.members }
+      ? {
+          lists: { include: { tasks: { orderBy: { position: "asc" } } } },
+          members: include.members,
+        }
       : { lists: include.lists, members: include.members },
   });
 };

@@ -29,6 +29,11 @@ export const validateListInput = (
       .string()
       .min(1, "List name is required")
       .max(255, "List name too long"),
+    position: z.coerce
+      .number()
+      .int()
+      .positive("List position must be positive integer.")
+      .optional(),
   });
 
   const result = schema.safeParse(req.body);
@@ -59,7 +64,11 @@ export const update = async (req: Request, res: Response) => {
   );
   if (!isMember)
     throw new ApiError("Unauthorized action", 403, "UnAuthorizedAction");
-  const updatedList = await services.update(req.listId, req.body.name);
+  const updatedList = await services.update(
+    req.listId,
+    req.body.name,
+    req.body.position
+  );
   return res.json(updatedList);
 };
 
