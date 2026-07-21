@@ -5,52 +5,72 @@ import ControlPanel from "./controlPanel";
 import ListUpdate from "./lists/ListUpdate";
 import ListDelete from "./lists/ListDelete";
 import TaskCreate from "./tasks/TaskCreate";
+import { useDroppable } from "@dnd-kit/react";
+import { CollisionPriority } from "@dnd-kit/abstract";
 
-type ListItemProps = React.ComponentProps<"li"> & {
+type ListItemProps = React.ComponentProps<"div"> & {
   list: List & { tasks: Task[] };
   workspaceId: number;
   projectId: number;
 };
 
 function ListItem({ workspaceId, projectId, list }: ListItemProps) {
+  const containerId = `list-${list.id}`;
+
+  const { isDropTarget, ref } = useDroppable({
+    id: containerId,
+    type: "list",
+    accept: "task",
+    collisionPriority: CollisionPriority.Low,
+  });
+
   return (
-    <li className="w-48 border">
-      <ul className="flex justify-between border items-center">
-        <li>{list.name}</li>
-        <li>
-          <ControlPanel>
-            <ListUpdate
-              workspaceId={workspaceId}
-              projectId={projectId}
-              listId={list.id}
-            />
-            <ListDelete
-              workspaceId={workspaceId}
-              projectId={projectId}
-              listId={list.id}
-            />
-          </ControlPanel>
-        </li>
-      </ul>
-      <ul>
-        {list.tasks.map((task) => (
+    <div
+      className={`w-64 border rounded flex flex-col p-2 bg-slate-50 ${
+        isDropTarget ? "bg-emerald-100 border-emerald-400" : "border-gray-200"
+      }`}
+      ref={ref}
+    >
+      <div className="flex justify-between items-center mb-4 px-1">
+        <h3 className="font-semibold text-gray-700">{list.name}</h3>
+        <ControlPanel>
+          <ListUpdate
+            workspaceId={workspaceId}
+            projectId={projectId}
+            listId={list.id}
+          />
+          <ListDelete
+            workspaceId={workspaceId}
+            projectId={projectId}
+            listId={list.id}
+          />
+        </ControlPanel>
+      </div>
+
+      <ul className="flex flex-col gap-2 grow min-h-37.5">
+        {list.tasks.map((task, index) => (
           <TaskItem
             key={task.id}
             task={task}
             workspaceId={workspaceId}
             projectId={projectId}
             listId={list.id}
+            index={index}
+            id={`task-${task.id}`}
+            column={containerId}
           />
         ))}
-        <li className="flex justify-center my-6">
-          <TaskCreate
-            workspaceId={workspaceId}
-            projectId={projectId}
-            listId={list.id}
-          />
-        </li>
       </ul>
-    </li>
+
+      <div className="mt-2 pt-2 border-t border-gray-200">
+        <TaskCreate
+          workspaceId={workspaceId}
+          projectId={projectId}
+          listId={list.id}
+        />
+      </div>
+    </div>
   );
 }
+
 export default ListItem;
