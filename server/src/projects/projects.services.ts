@@ -15,11 +15,10 @@ interface ProjectInclude {
 
 export const getById = async (
   id: number,
-  workspaceId: number,
   include: ProjectInclude = { lists: false, members: false, tasks: false }
 ) => {
   return await prisma.project.findUnique({
-    where: { id, workspaceId },
+    where: { id },
     include: include.tasks
       ? {
           lists: { include: { tasks: { orderBy: { position: "asc" } } } },

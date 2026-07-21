@@ -1,5 +1,5 @@
 function ListsContainer({ children, className }: React.ComponentProps<"ul">) {
-  return <ul className={className}>{children}</ul>;
+  return <div className={className}>{children}</div>;
 }
 
 export default ListsContainer;

@@ -95,7 +95,7 @@ it("rejects letters in projectId", async () => {
   const { member, workspace } = await seedDB();
   const cookies = await getAuthCookies(member);
   const res = await request(app)
-    .get(`/api/workspaces/${workspace.id}/projects/lol`)
+    .get(`/api/projects/lol`)
     .set("Cookie", cookies);
 
   expect(res.status).toBe(400);
@@ -139,15 +139,19 @@ it("GET api/workspaces/:workspaceId/projects", async () => {
   });
 });
 
-it("GET api/workspaces/:workspaceId/projects/:id", async () => {
+it("GET api/projects/:id", async () => {
   const { member, workspace } = await seedDB();
   const project = await prisma.project.create({
-    data: { name: "my project", workspaceId: workspace.id },
+    data: {
+      name: "my project",
+      workspaceId: workspace.id,
+      members: { create: { userId: member.id, userRole: "MEMBER" } },
+    },
     select: { id: true, name: true },
   });
   const cookies = await getAuthCookies(member);
   const res = await request(app)
-    .get(`/api/workspaces/${workspace.id}/projects/${project.id}`)
+    .get(`/api/projects/${project.id}`)
     .set("Cookie", cookies);
 
   expect(res.status).toBe(200);
@@ -170,7 +174,7 @@ it("POST api/workspaces/:workspaceId/projects", async () => {
   expect(project).not.toBeNull();
 });
 
-describe("PUT api/workspaces/:workspaceId/projects/:id", () => {
+describe("PUT api/projects/:id", () => {
   it("accepts updates from project owners", async () => {
     const { member, workspace } = await seedDB();
     const project = await prisma.project.create({
@@ -182,7 +186,7 @@ describe("PUT api/workspaces/:workspaceId/projects/:id", () => {
     });
     const cookies = await getAuthCookies(member);
     const res = await request(app)
-      .put(`/api/workspaces/${workspace.id}/projects/${project.id}`)
+      .put(`/api/projects/${project.id}`)
       .send({ name: "his project" })
       .set("Cookie", cookies);
 
@@ -200,7 +204,7 @@ describe("PUT api/workspaces/:workspaceId/projects/:id", () => {
     });
     const cookies = await getAuthCookies(member);
     const res = await request(app)
-      .put(`/api/workspaces/${workspace.id}/projects/${project.id}`)
+      .put(`/api/projects/${project.id}`)
       .send({ name: "his project" })
       .set("Cookie", cookies);
 
@@ -209,7 +213,7 @@ describe("PUT api/workspaces/:workspaceId/projects/:id", () => {
   });
 });
 
-describe("DELETE api/workspaces/:workspaceId/projects/:id", () => {
+describe("DELETE api/projects/:id", () => {
   it("accepts deletes from project owners", async () => {
     const { member, workspace } = await seedDB();
     const project = await prisma.project.create({
@@ -221,7 +225,7 @@ describe("DELETE api/workspaces/:workspaceId/projects/:id", () => {
     });
     const cookies = await getAuthCookies(member);
     const res = await request(app)
-      .delete(`/api/workspaces/${workspace.id}/projects/${project.id}`)
+      .delete(`/api/projects/${project.id}`)
       .set("Cookie", cookies);
 
     expect(res.status).toBe(204);
@@ -237,7 +241,7 @@ describe("DELETE api/workspaces/:workspaceId/projects/:id", () => {
     });
     const cookies = await getAuthCookies(member);
     const res = await request(app)
-      .delete(`/api/workspaces/${workspace.id}/projects/${project.id}`)
+      .delete(`/api/projects/${project.id}`)
       .set("Cookie", cookies);
 
     expect(res.status).toBe(403);

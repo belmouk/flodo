@@ -18,11 +18,7 @@ export const show = async (req: Request, res: Response) => {
       includes[resource as keyof typeof includes] = true;
     }
   }
-  const project = await services.getById(
-    req.projectId,
-    req.workspaceId,
-    includes
-  );
+  const project = await services.getById(req.projectId, includes);
   if (!project)
     throw new ApiError("Project was not found", 404, "ProjectDoesNotExist");
   return res.json(project);
@@ -72,17 +68,15 @@ export const destroy = async (req: Request, res: Response) => {
 export const validateProjectRoute = async (
   req: Request,
   res: Response,
-  next: NextFunction,
-  projectId: string
+  next: NextFunction
 ) => {
   const schema = z.coerce.number().int().positive();
 
-  const result = schema.safeParse(projectId);
+  const result = schema.safeParse(req.params.projectId);
 
   if (!result.success)
     throw new ApiError("Invalid route params", 400, "InvalidRouteParams");
-
-  const project = await services.getById(result.data, req.workspaceId);
+  const project = await services.getById(result.data);
   if (!project)
     throw new ApiError("Project was not found", 404, "ProjectNotFound");
   req.projectId = result.data;
@@ -114,6 +108,7 @@ export const ensureProjectMembership = async (
   res: Response,
   next: NextFunction
 ) => {
+  console.log(req.user, req.projectId);
   if (!(await services.userIsProjectMember(req.userId, req.projectId)))
     throw new ApiError("Resource not accessible", 403, "UnAuthorizedAccess");
   return next();

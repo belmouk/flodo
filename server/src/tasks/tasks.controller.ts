@@ -11,7 +11,7 @@ export const index = async (req: Request, res: Response) => {
 };
 
 export const show = async (req: Request, res: Response) => {
-  const result = await services.getById(req.listId, req.taskId);
+  const result = await services.getById(req.taskId);
   if (!result) {
     throw new ApiError("Task was not found", 404, "TaskDoesNotExist");
   }
@@ -21,16 +21,15 @@ export const show = async (req: Request, res: Response) => {
 export const validateTaskRoute = async (
   req: Request,
   res: Response,
-  next: NextFunction,
-  taskId: string
+  next: NextFunction
 ) => {
   const schema = z.coerce.number().int().positive();
-  const result = schema.safeParse(taskId);
+  const result = schema.safeParse(req.params.taskId);
 
   if (!result.success) {
     throw new ApiError("Invalid route params", 400, "InvalidRouteParams");
   }
-  const task = await services.getById(req.listId, result.data);
+  const task = await services.getById(result.data);
   if (!task) throw new ApiError("Task does not exist", 404, "TaskDoesNotExist");
   req.taskId = result.data;
   return next();
@@ -119,18 +118,20 @@ export const validateTaskUpdate = (
       .int()
       .positive("listId must be a positive integer")
       .optional(),
-    location: z.object({
-      before: z.coerce
-        .number()
-        .int()
-        .nonnegative("Position before must be a positive integer")
-        .nullable(),
-      after: z.coerce
-        .number()
-        .int()
-        .nonnegative("Position after must be a positive integer")
-        .nullable(),
-    }),
+    location: z
+      .object({
+        before: z.coerce
+          .number()
+          .int()
+          .nonnegative("Position before must be a positive integer")
+          .nullable(),
+        after: z.coerce
+          .number()
+          .int()
+          .nonnegative("Position after must be a positive integer")
+          .nullable(),
+      })
+      .optional(),
   });
   const result = schema.safeParse(req.body);
   if (!result.success) {
@@ -168,8 +169,8 @@ export const update = async (
   if (!hasEditRights) {
     throw new ApiError("unauthorized action", 403, "UnAuthorizedAction");
   }
-  const task = (await services.getById(req.listId, req.taskId)) as Task;
-  const updatedTask = await services.update({ ...task, ...req.body });
+
+  const updatedTask = await services.update({ ...req.body, id: req.taskId });
   return res.json(updatedTask);
 };
 
@@ -180,4 +181,15 @@ export const destroy = async (req: Request, res: Response) => {
   }
   await services.destroy(req.taskId);
   return res.sendStatus(204);
+};
+
+export const ensureAccess = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const access = await services.userHasAccess(req.taskId, req.userId);
+  if (!access)
+    throw new ApiError("Resource not accessible", 403, "UnAuthorizedAccess");
+  return next();
 };

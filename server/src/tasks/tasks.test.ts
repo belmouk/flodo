@@ -112,7 +112,7 @@ it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", as
   expect(res.body).toMatchObject(tasks);
 });
 
-it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:taskId", async () => {
+it("GET api/tasks/:taskId", async () => {
   const { admin, member, project, list, workspace } = await seedDB();
   const task = await prisma.task.create({
     data: {
@@ -127,9 +127,7 @@ it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:tas
 
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
-    .get(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`
-    )
+    .get(`/api/tasks/${task.id}`)
     .set("Cookie", cookies);
 
   expect(res.status).toBe(200);
@@ -158,8 +156,8 @@ it("POST api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", a
   expect(res.body).toMatchObject(expectedTask!);
 });
 
-it("PUT api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:taskId", async () => {
-  const { admin, member, project, workspace, list } = await seedDB();
+it("PATCH api/tasks/:taskId", async () => {
+  const { admin, member, list } = await seedDB();
   const task = await prisma.task.create({
     data: {
       listId: list.id,
@@ -173,9 +171,7 @@ it("PUT api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:tas
 
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
-    .put(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`
-    )
+    .patch(`/api/tasks/${task.id}`)
     .send({ title: "task10" })
     .set("Cookie", cookies);
   const expectedTask = await prisma.task.findUnique({
@@ -187,7 +183,7 @@ it("PUT api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:tas
   expect(res.body).toMatchObject(expectedTask!);
 });
 
-it("DELETE api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:taskId", async () => {
+it("DELETE api/tasks/:taskId", async () => {
   const { admin, member, project, workspace, list } = await seedDB();
   const task = await prisma.task.create({
     data: {
@@ -202,9 +198,7 @@ it("DELETE api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks/:
 
   const cookies = await getAuthCookies(admin);
   const res = await request(app)
-    .delete(
-      `/api/workspaces/${workspace.id}/projects/${project.id}/lists/${list.id}/tasks/${task.id}`
-    )
+    .delete(`/api/tasks/${task.id}`)
     .set("Cookie", cookies);
   const expectedTask = await prisma.task.findUnique({
     where: { id: task.id },

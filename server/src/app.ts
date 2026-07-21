@@ -6,6 +6,9 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import ensureAuth from "./middleware/ensureAuth.js";
 import workspacesRouter from "./workspaces/workspaces.routes.js";
+import projectsRouter from "./projects/projects.routes.js";
+import listsRouter from "./lists/lists.routes.js";
+import tasksRouter from "./tasks/tasks.routes.js";
 
 const app = express();
 
@@ -16,6 +19,10 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use(ensureAuth);
 app.use("/api/workspaces", workspacesRouter);
+app.use("/api/projects", projectsRouter);
+app.use("/api/lists", listsRouter);
+app.use("/api/tasks", tasksRouter);
+
 app.use((req: Request, res: Response) =>
   res.status(404).send({
     message: "Resource not found",

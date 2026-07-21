@@ -1,9 +1,16 @@
 import { defineConfig } from "vitest/config";
+import { loadEnv } from "vite";
 
-export default defineConfig({
-  test: {
-    environment: "node",
-    globals: true,
-    fileParallelism: false,
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+
+  return {
+    test: {
+      environment: "node",
+      globals: true,
+      fileParallelism: false,
+
+      env: env,
+    },
+  };
 });

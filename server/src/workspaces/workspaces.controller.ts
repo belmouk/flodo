@@ -74,12 +74,10 @@ export const ensureWorkspaceMembership = async (
 export const validateWorkspaceRoute = (
   req: Request,
   res: Response,
-  next: NextFunction,
-  workspaceId: string
+  next: NextFunction
 ) => {
   const schema = z.coerce.number().int().positive();
-
-  const result = schema.safeParse(workspaceId);
+  const result = schema.safeParse(req.params.workspaceId);
   if (!result.success) {
     throw new ApiError("Invalid route params", 400, "InvalidRouteParams");
   }
