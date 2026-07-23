@@ -66,7 +66,7 @@ function ProjectChange({
       const url =
         HTTPMethod === "POST"
           ? `${apiUrl}/workspaces/${workspaceId}/projects`
-          : `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}`;
+          : `${apiUrl}/projects/${projectId}`;
 
       const res = await fetchApi<Project>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;

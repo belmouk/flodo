@@ -39,7 +39,7 @@ type TaskChangeProps =
       taskId?: number;
     }
   | {
-      HTTPMethod: "PUT";
+      HTTPMethod: "PATCH";
       workspaceId: number;
       projectId: number;
       listId: number;
@@ -111,7 +111,7 @@ function TaskChange({
       const url =
         HTTPMethod === "POST"
           ? `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks`
-          : `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks/${taskId}`;
+          : `${apiUrl}/tasks/${taskId}`;
 
       const res = await fetchApi<List>(url, HTTPMethod, body);
       if (!res.success) throw res.error;
@@ -155,8 +155,11 @@ function TaskChange({
       setErrors({});
       setInput(cleanInput);
     }
-    if (HTTPMethod === "PUT" && nextOpen) {
-      const project = queryClient.getQueryData<ProjectWithLists>(["lists"]);
+    if (HTTPMethod === "PATCH" && nextOpen) {
+      const project = queryClient.getQueryData<ProjectWithLists>([
+        "lists",
+        projectId,
+      ]);
       if (project && project.lists) {
         for (const list of project.lists) {
           if (list.id === listId && list.tasks) {
@@ -182,7 +185,7 @@ function TaskChange({
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button className="hover:cursor-pointer" variant={"ghost"}>
-              {HTTPMethod === "PUT" ? (
+              {HTTPMethod === "PATCH" ? (
                 <SquarePen className="size-6" />
               ) : (
                 <CirclePlus className="size-6" />
@@ -190,16 +193,18 @@ function TaskChange({
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent>{HTTPMethod === "PUT" ? "Edit" : "Add"}</TooltipContent>
+        <TooltipContent>
+          {HTTPMethod === "PATCH" ? "Edit" : "Add"}
+        </TooltipContent>
       </Tooltip>
 
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {HTTPMethod === "PUT" ? "Edit Task" : "New List"}
+            {HTTPMethod === "PATCH" ? "Edit Task" : "New List"}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            {HTTPMethod === "PUT"
+            {HTTPMethod === "PATCH"
               ? "Update your task name and details."
               : "Create a new task by entering a name."}
           </DialogDescription>

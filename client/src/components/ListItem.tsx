@@ -1,6 +1,6 @@
 import type React from "react";
 import type { List, Task } from "../../../server/generated/prisma/client";
-import TaskItem from "./taskItem";
+import TaskItem from "./TaskItem";
 import ControlPanel from "./controlPanel";
 import ListUpdate from "./lists/ListUpdate";
 import ListDelete from "./lists/ListDelete";
@@ -39,11 +39,7 @@ function ListItem({ workspaceId, projectId, list }: ListItemProps) {
             projectId={projectId}
             listId={list.id}
           />
-          <ListDelete
-            workspaceId={workspaceId}
-            projectId={projectId}
-            listId={list.id}
-          />
+          <ListDelete projectId={projectId} listId={list.id} />
         </ControlPanel>
       </div>
 

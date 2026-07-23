@@ -50,12 +50,7 @@ function TaskItem({
             projectId={projectId}
             taskId={task.id}
           />
-          <TaskDelete
-            workspaceId={workspaceId}
-            listId={listId}
-            projectId={projectId}
-            taskId={task.id}
-          />
+          <TaskDelete projectId={projectId} taskId={task.id} />
         </ControlPanel>
       </div>
     </li>
