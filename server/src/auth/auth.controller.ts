@@ -32,7 +32,7 @@ export const login = async (
     path: "/",
   });
   res.cookie("accessToken", accessToken, {
-    maxAge: 15 * 1000,
+    maxAge: 15 * 60 * 1000,
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
@@ -81,7 +81,7 @@ export const refresh = async (req: Request, res: Response) => {
     path: "/",
   });
   res.cookie("accessToken", accessToken, {
-    maxAge: 15 * 1000,
+    maxAge: 15 * 60 * 1000,
     httpOnly: true,
     secure: CONFIG.NODE_ENV === "production",
     sameSite: "lax",
