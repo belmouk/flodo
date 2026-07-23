@@ -25,7 +25,7 @@ function ProjectDelete({
   const deleteProject = useMutation({
     mutationFn: async () => {
       const result = await fetchApi<undefined>(
-        `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}`,
+        `${apiUrl}/projects/${projectId}`,
         "DELETE",
       );
       if (result.success) return;

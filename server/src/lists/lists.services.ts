@@ -4,8 +4,8 @@ export const getAll = async (projectId: number) => {
   return await prisma.list.findMany({ where: { projectId } });
 };
 
-export const getById = async (projectId: number, listId: number) => {
-  return await prisma.list.findUnique({ where: { projectId, id: listId } });
+export const getById = async (listId: number) => {
+  return await prisma.list.findUnique({ where: { id: listId } });
 };
 
 export const update = async (id: number, name: string, position?: number) => {
@@ -34,4 +34,11 @@ export const create = async (projectId: number, name: string) => {
 
 export const destroy = async (listId: number) => {
   await prisma.list.deleteMany({ where: { id: listId } });
+};
+
+export const userHasAccess = async (listId: number, userId: number) => {
+  const count = await prisma.projectUser.count({
+    where: { userId, project: { lists: { some: { id: listId } } } },
+  });
+  return count > 0;
 };

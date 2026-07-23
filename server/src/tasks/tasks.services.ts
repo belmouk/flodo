@@ -1,7 +1,10 @@
+import { title } from "node:process";
 import ApiError from "../lib/ApiError.js";
 import { prisma } from "../lib/prisma.js";
 import { TaskStatus } from "../prisma/client.js";
 import type { Location } from "./tasks.controller.js";
+import { INSPECT_MAX_BYTES } from "node:buffer";
+import { keyof } from "zod";
 
 export const getAll = async (listId: number) => {
   return await prisma.task.findMany({
@@ -10,9 +13,9 @@ export const getAll = async (listId: number) => {
   });
 };
 
-export const getById = async (listId: number, taskId: number) => {
+export const getById = async (taskId: number) => {
   return await prisma.task.findUnique({
-    where: { listId, id: taskId },
+    where: { id: taskId },
   });
 };
 
@@ -55,44 +58,37 @@ export const create = async ({
   });
 };
 
-export const update = async ({
-  id,
-  title,
-  description,
-  dueAt,
-  status,
-  assigneeId,
-  listId,
-  location,
-}: {
+type UpdateInput = {
   id: number;
-  title: string;
-  description: string | null;
-  dueAt: Date;
-  status: TaskStatus;
-  assigneeId: number;
-  listId: number;
+  title?: string;
+  description?: string | null;
+  dueAt?: Date;
+  status?: TaskStatus;
+  assigneeId?: number;
+  listId?: number;
   location?: Location;
-}) => {
-  let data = {
-    title,
-    description,
-    status,
-    dueAt,
-    assigneeId,
-    completedAt: status === "DONE" ? new Date(Date.now()) : null,
-    listId,
-  };
+};
+
+export const update = async (input: UpdateInput) => {
+  let cleanInput: Record<string, any> = {};
+  const ignoredFields = new Set(["id", "location"]);
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined && value !== null && !ignoredFields.has(key)) {
+      cleanInput[key] = value;
+    }
+    if (key === "status")
+      cleanInput["completedAt"] = value === "DONE" ? new Date() : null;
+  }
+
   const INTERVAL_LIMIT = 10;
   const POSITION_INCREMENT = 1000;
-  if (location) {
+  if (input.location && input.listId) {
+    const { location, listId, id } = input;
     const neighborBefore = location.before
-      ? await getById(listId, location.before)
+      ? await getById(location.before)
       : null;
 
-    const neighborAfter = location.after
-      ? await getById(listId, location.after)
-      : null;
+    const neighborAfter = location.after ? await getById(location.after) : null;
     if (neighborBefore && neighborAfter) {
       const InBetweenTaskExists =
         (await prisma.task.count({
@@ -148,7 +144,7 @@ export const update = async ({
       }
       return await prisma.task.update({
         where: { id },
-        data: { ...data, position: newPosition },
+        data: { ...cleanInput, position: newPosition },
       });
     } else if (neighborBefore) {
       const afterTasksExist =
@@ -164,7 +160,7 @@ export const update = async ({
       return await prisma.task.update({
         where: { id },
         data: {
-          ...data,
+          ...cleanInput,
           position: currentMaxPosition._max.position
             ? currentMaxPosition._max.position + POSITION_INCREMENT
             : POSITION_INCREMENT,
@@ -203,7 +199,7 @@ export const update = async ({
       }
       return await prisma.task.update({
         where: { id },
-        data: { ...data, position: newPosition },
+        data: { ...cleanInput, position: newPosition },
       });
     } else {
       const tasksExist = (await prisma.task.count({ where: { listId } })) > 0;
@@ -215,13 +211,13 @@ export const update = async ({
         );
       return prisma.task.update({
         where: { id },
-        data: { ...data, position: POSITION_INCREMENT },
+        data: { ...cleanInput, position: POSITION_INCREMENT },
       });
     }
   }
   return await prisma.task.update({
-    where: { id },
-    data,
+    where: { id: input.id },
+    data: cleanInput,
   });
 };
 
@@ -241,4 +237,11 @@ export const hasEditRights = async (userId: number, taskId: number) => {
 
 export const destroy = async (taskId: number) => {
   await prisma.task.delete({ where: { id: taskId } });
+};
+
+export const userHasAccess = async (taskId: number, userId: number) => {
+  const count = await prisma.task.count({
+    where: { id: taskId, list: { project: { members: { some: { userId } } } } },
+  });
+  return count > 0;
 };

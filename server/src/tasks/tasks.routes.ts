@@ -1,14 +1,13 @@
 import { Router } from "express";
 import * as controller from "./tasks.controller.js";
 
-const router = Router({ mergeParams: true });
+const router = Router();
 
-router.param("taskId", controller.validateTaskRoute);
+router.use("/:taskId", controller.validateTaskRoute);
+router.use("/:taskId", controller.ensureAccess);
 
-router.get("/", controller.index);
 router.get("/:taskId", controller.show);
-router.post("/", controller.validateTaskCreation, controller.create);
-router.put("/:taskId", controller.validateTaskUpdate, controller.update);
+router.patch("/:taskId", controller.validateTaskUpdate, controller.update);
 router.delete("/:taskId", controller.destroy);
 
 export default router;

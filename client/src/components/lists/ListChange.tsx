@@ -70,7 +70,7 @@ function ListChange({
       const url =
         HTTPMethod === "POST"
           ? `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists`
-          : `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}`;
+          : `${apiUrl}/lists/${listId}`;
 
       const res = await fetchApi<List>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;
@@ -81,8 +81,8 @@ function ListChange({
       if (error.status === 401) return navigate("/login");
       setErrors(error.details);
     },
-    onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ["lists"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["lists", projectId] });
       setInput({ name: "" });
       setErrors({});
       setOpen(false);
@@ -115,7 +115,10 @@ function ListChange({
       setInput({ name: "" });
     }
     if (HTTPMethod === "PUT" && nextOpen) {
-      const project = queryClient.getQueryData<ProjectWithLists>(["lists"]);
+      const project = queryClient.getQueryData<ProjectWithLists>([
+        "lists",
+        projectId,
+      ]);
       const list = project?.lists?.find((ls) => ls.id === listId);
       if (list) setInput({ name: list.name });
     }

@@ -1,12 +1,12 @@
 import type React from "react";
 import type { List, Task } from "../../../server/generated/prisma/client";
-import TaskItem from "./taskItem";
 import ControlPanel from "./controlPanel";
 import ListUpdate from "./lists/ListUpdate";
 import ListDelete from "./lists/ListDelete";
 import TaskCreate from "./tasks/TaskCreate";
 import { useDroppable } from "@dnd-kit/react";
 import { CollisionPriority } from "@dnd-kit/abstract";
+import TaskItem from "./TaskItem";
 
 type ListItemProps = React.ComponentProps<"div"> & {
   list: List & { tasks: Task[] };
@@ -39,11 +39,7 @@ function ListItem({ workspaceId, projectId, list }: ListItemProps) {
             projectId={projectId}
             listId={list.id}
           />
-          <ListDelete
-            workspaceId={workspaceId}
-            projectId={projectId}
-            listId={list.id}
-          />
+          <ListDelete projectId={projectId} listId={list.id} />
         </ControlPanel>
       </div>
 

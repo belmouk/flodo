@@ -22,8 +22,7 @@ export type ProjectWithLists = PrismaProject & {
 type TaskPositionMutationType = {
   taskId: number;
   location: { before: number | null; after: number | null };
-  initialListId: number;
-  targetListId: number;
+  listId: number;
 };
 
 function Project() {
@@ -31,13 +30,11 @@ function Project() {
   const queryClient = useQueryClient();
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
-  const [trueSourceListId, setTrueSourceListId] = useState<number | null>(null);
-
   const { isPending, isError, data, error } = useQuery({
-    queryKey: ["lists", projectId],
+    queryKey: ["lists", Number(projectId)],
     queryFn: async () => {
       const res = await fetchApi<ProjectWithLists>(
-        `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}?includes=lists,tasks`,
+        `${apiUrl}/projects/${projectId}?includes=lists,tasks`,
         "GET",
       );
       if (res.success) return res.data;
@@ -49,18 +46,16 @@ function Project() {
     mutationFn: async ({
       taskId,
       location,
-      initialListId,
-      targetListId,
+      listId,
     }: TaskPositionMutationType) => {
-      const result = await fetchApi(
-        `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists/${initialListId}/tasks/${taskId}`,
-        "PUT",
-        { listId: targetListId, taskId, location },
-      );
+      const result = await fetchApi(`${apiUrl}/tasks/${taskId}`, "PATCH", {
+        listId,
+        location,
+      });
       if (!result.success) throw result.error;
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["lists", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["lists", Number(projectId)] });
     },
   });
 
@@ -80,14 +75,6 @@ function Project() {
         onDragStart={(event) => {
           const sourceElement = event.operation.source;
           setActiveTaskId(sourceElement?.id?.toString() || null);
-
-          if (sourceElement && isSortable(sourceElement)) {
-            const startingGroup =
-              sourceElement.initialGroup || sourceElement.group;
-            if (startingGroup) {
-              setTrueSourceListId(parseId(startingGroup));
-            }
-          }
         }}
         onDragOver={(event) => {
           const { source, target } = event.operation;
@@ -109,7 +96,7 @@ function Project() {
           const targetListId = parseId(targetGroupId);
 
           queryClient.setQueryData(
-            ["lists", projectId],
+            ["lists", Number(projectId)],
             (old: ProjectWithLists | undefined) => {
               if (!old) return old;
 
@@ -143,32 +130,18 @@ function Project() {
         }}
         onDragEnd={(event) => {
           setActiveTaskId(null);
-          if (event.canceled) {
-            setTrueSourceListId(null);
-            return;
-          }
+          if (event.canceled) return;
 
           const { source, target } = event.operation;
-          if (
-            !target ||
-            !source ||
-            !isSortable(source) ||
-            !source.group ||
-            trueSourceListId === null
-          ) {
-            setTrueSourceListId(null);
+          if (!target || !source || !isSortable(source) || !source.group)
             return;
-          }
 
           const taskId = parseId(source.id);
           const targetListId = parseId(source.group);
-          const initialListId = trueSourceListId;
-
-          setTrueSourceListId(null);
 
           const serverSnapshot = queryClient.getQueryData<ProjectWithLists>([
             "lists",
-            projectId,
+            Number(projectId),
           ]);
           if (!serverSnapshot) return;
 
@@ -201,8 +174,7 @@ function Project() {
 
           mutation.mutate({
             taskId,
-            initialListId,
-            targetListId,
+            listId: targetListId,
             location: {
               before: beforeId,
               after: afterId,

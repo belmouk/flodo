@@ -15,7 +15,7 @@ function TaskUpdate({
 }: TaskUpdateProps) {
   return (
     <TaskChange
-      HTTPMethod="PUT"
+      HTTPMethod="PATCH"
       workspaceId={workspaceId}
       projectId={projectId}
       listId={listId}

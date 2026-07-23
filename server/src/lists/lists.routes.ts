@@ -2,12 +2,10 @@ import { Router } from "express";
 import * as controller from "./lists.controller.js";
 import tasksRouter from "../tasks/tasks.routes.js";
 
-const router = Router({ mergeParams: true });
+const router = Router();
 
-router.param("listId", controller.validateListRoute);
-
-router.get("/", controller.index);
-router.post("/", controller.validateListInput, controller.create);
+router.use("/:listId", controller.validateListRoute);
+router.use("/:listId", controller.ensureAccess);
 
 router.get("/:listId", controller.show);
 router.put("/:listId", controller.validateListInput, controller.update);
