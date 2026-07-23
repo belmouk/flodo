@@ -11,17 +11,12 @@ interface TaskDeleteProps {
   taskId: number;
 }
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function TaskDelete({ projectId, taskId }: TaskDeleteProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: async () => {
-      const result = await fetchApi<undefined>(
-        `${apiUrl}/tasks/${taskId}`,
-        "DELETE",
-      );
+      const result = await fetchApi<undefined>(`/tasks/${taskId}`, "DELETE");
       if (result.success) return;
       throw result.error;
     },

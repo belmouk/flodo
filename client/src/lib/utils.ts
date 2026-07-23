@@ -18,7 +18,7 @@ export const fetchApi = async <T>(
   body?: Record<string, unknown>,
   retry = false,
 ): Promise<ApiResult<T>> => {
-  const res = await fetch(url, {
+  const res = await fetch(apiUrl + url, {
     method,
     credentials: "include",
     headers: body ? { "Content-Type": "application/json" } : undefined,

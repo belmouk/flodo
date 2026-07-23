@@ -13,8 +13,6 @@ import ListCreate from "@/components/lists/ListCreate";
 import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 export type ProjectWithLists = PrismaProject & {
   lists: (List & { tasks: Task[] })[];
 };
@@ -34,7 +32,7 @@ function Project() {
     queryKey: ["lists", Number(projectId)],
     queryFn: async () => {
       const res = await fetchApi<ProjectWithLists>(
-        `${apiUrl}/projects/${projectId}?includes=lists,tasks`,
+        `/projects/${projectId}?includes=lists,tasks`,
         "GET",
       );
       if (res.success) return res.data;
@@ -48,7 +46,7 @@ function Project() {
       location,
       listId,
     }: TaskPositionMutationType) => {
-      const result = await fetchApi(`${apiUrl}/tasks/${taskId}`, "PATCH", {
+      const result = await fetchApi(`/tasks/${taskId}`, "PATCH", {
         listId,
         location,
       });

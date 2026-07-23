@@ -43,8 +43,6 @@ type ListChangeProps =
       listId: number;
     };
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 const schema = z.object({
   name: z
     .string()
@@ -69,8 +67,8 @@ function ListChange({
     mutationFn: async ({ name }: typeof input) => {
       const url =
         HTTPMethod === "POST"
-          ? `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists`
-          : `${apiUrl}/lists/${listId}`;
+          ? `/workspaces/${workspaceId}/projects/${projectId}/lists`
+          : `/lists/${listId}`;
 
       const res = await fetchApi<List>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;

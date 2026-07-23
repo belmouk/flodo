@@ -8,15 +8,13 @@ import WorkspaceCreate from "@/components/workspaces/workspaceCreate";
 import WorkspaceDelete from "@/components/workspaces/workspaceDelete";
 import WorkspaceUpdate from "@/components/workspaces/workspaceUpdate";
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function Workspaces() {
   const { workspaceId } = useParams();
   const user = useOutletContext<LoaderData>();
   const { isPending, isError, error, data } = useQuery({
     queryKey: ["workspaces"],
     queryFn: async () => {
-      const res = await fetchApi<Workspace[]>(`${apiUrl}/workspaces`, "GET");
+      const res = await fetchApi<Workspace[]>("/workspaces", "GET");
       if (!res.success) throw res.error;
       return res.data;
     },

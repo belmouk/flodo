@@ -11,18 +11,16 @@ import Workspace from "./pages/Workspace";
 import { fetchApi } from "./lib/utils";
 import Project from "./pages/Project";
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 export type LoaderData = User;
 
 const publicLoader = async () => {
-  const result = await fetchApi<User>(`${apiUrl}/auth/me`, "GET");
+  const result = await fetchApi<User>("/auth/me", "GET");
   if (result.success) throw redirect("/workspaces");
   return null;
 };
 
 const protectedLoader = async () => {
-  const result = await fetchApi<User>(`${apiUrl}/auth/me`, "GET");
+  const result = await fetchApi<User>("/auth/me", "GET");
   if (!result.success) throw redirect("/login");
   return result.data;
 };

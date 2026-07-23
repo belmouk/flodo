@@ -9,8 +9,6 @@ import ProjectUpdate from "@/components/projects/projectUpdate";
 import { useState } from "react";
 import ProjectOpen from "@/components/projects/projectOpen";
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function Workspace() {
   const { workspaceId } = useParams();
   const [selected, setSelected] = useState<number | undefined>();
@@ -18,7 +16,7 @@ function Workspace() {
     queryKey: ["workspace", workspaceId],
     queryFn: async () => {
       const res = await fetchApi<Project[]>(
-        `${apiUrl}/workspaces/${workspaceId}/projects`,
+        `/workspaces/${workspaceId}/projects`,
         "GET",
       );
       if (!res.success) throw res.error;

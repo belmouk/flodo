@@ -46,8 +46,6 @@ type TaskChangeProps =
       taskId: number;
     };
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 const schema = z.object({
   title: z
     .string()
@@ -110,8 +108,8 @@ function TaskChange({
     mutationFn: async (body: Body) => {
       const url =
         HTTPMethod === "POST"
-          ? `${apiUrl}/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks`
-          : `${apiUrl}/tasks/${taskId}`;
+          ? `/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks`
+          : `/tasks/${taskId}`;
 
       const res = await fetchApi<List>(url, HTTPMethod, body);
       if (!res.success) throw res.error;

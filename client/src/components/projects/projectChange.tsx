@@ -42,8 +42,6 @@ type ProjectChangeProps =
       workspaceId: number;
     };
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 const schema = z.object({
   name: z
     .string()
@@ -65,8 +63,8 @@ function ProjectChange({
     mutationFn: async ({ name }: typeof input) => {
       const url =
         HTTPMethod === "POST"
-          ? `${apiUrl}/workspaces/${workspaceId}/projects`
-          : `${apiUrl}/projects/${projectId}`;
+          ? `/workspaces/${workspaceId}/projects`
+          : `/projects/${projectId}`;
 
       const res = await fetchApi<Project>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;

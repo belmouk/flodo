@@ -38,8 +38,6 @@ type WorkspaceChangeProps =
       workspaceId: number;
     };
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 const schema = z.object({
   name: z
     .string()
@@ -58,9 +56,7 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
   const mutation = useMutation({
     mutationFn: async ({ name }: typeof input) => {
       const url =
-        HTTPMethod === "POST"
-          ? `${apiUrl}/workspaces`
-          : `${apiUrl}/workspaces/${workspaceId}`;
+        HTTPMethod === "POST" ? "/workspaces" : `/workspaces/${workspaceId}`;
 
       const res = await fetchApi<Workspace>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;

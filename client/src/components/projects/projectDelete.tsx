@@ -13,8 +13,6 @@ type ProjectDeleteProps = {
   setProjectId: React.Dispatch<React.SetStateAction<number | undefined>>;
 };
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function ProjectDelete({
   projectId,
   workspaceId,
@@ -25,7 +23,7 @@ function ProjectDelete({
   const deleteProject = useMutation({
     mutationFn: async () => {
       const result = await fetchApi<undefined>(
-        `${apiUrl}/projects/${projectId}`,
+        `/projects/${projectId}`,
         "DELETE",
       );
       if (result.success) return;

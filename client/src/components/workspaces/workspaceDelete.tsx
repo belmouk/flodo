@@ -10,15 +10,13 @@ interface WorkspaceDeleteProps {
   workspaceId: number;
 }
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function WorkspaceDelete({ workspaceId }: WorkspaceDeleteProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const deleteWorkspace = useMutation({
     mutationFn: async () => {
       const result = await fetchApi<undefined>(
-        `${apiUrl}/workspaces/${workspaceId}`,
+        `/workspaces/${workspaceId}`,
         "DELETE",
       );
       if (result.success) return;

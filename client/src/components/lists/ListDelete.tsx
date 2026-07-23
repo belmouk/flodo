@@ -11,17 +11,12 @@ interface ListDeleteProps {
   listId: number;
 }
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function ListDelete({ projectId, listId }: ListDeleteProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: async () => {
-      const result = await fetchApi<undefined>(
-        `${apiUrl}/lists/${listId}`,
-        "DELETE",
-      );
+      const result = await fetchApi<undefined>(`/lists/${listId}`, "DELETE");
       if (result.success) return;
       throw result.error;
     },
