@@ -117,7 +117,7 @@ function ListChange({
         "lists",
         projectId,
       ]);
-      const list = project?.lists?.find((ls) => ls.id === listId);
+      const list = project?.lists.find((ls) => ls.id === listId);
       if (list) setInput({ name: list.name });
     }
     setOpen(nextOpen);

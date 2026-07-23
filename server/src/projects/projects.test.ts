@@ -92,7 +92,7 @@ describe("projects bad routes", () => {
 });
 
 it("rejects letters in projectId", async () => {
-  const { member, workspace } = await seedDB();
+  const { member } = await seedDB();
   const cookies = await getAuthCookies(member);
   const res = await request(app)
     .get(`/api/projects/lol`)

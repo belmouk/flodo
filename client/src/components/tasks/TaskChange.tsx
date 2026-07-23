@@ -158,9 +158,9 @@ function TaskChange({
         "lists",
         projectId,
       ]);
-      if (project && project.lists) {
+      if (project) {
         for (const list of project.lists) {
-          if (list.id === listId && list.tasks) {
+          if (list.id === listId) {
             for (const task of list.tasks) {
               if (task.id === taskId)
                 setInput({

@@ -52,8 +52,10 @@ function Project() {
       });
       if (!result.success) throw result.error;
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["lists", Number(projectId)] });
+    onSettled: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["lists", Number(projectId)],
+      });
     },
   });
 
@@ -72,7 +74,7 @@ function Project() {
       <DragDropProvider
         onDragStart={(event) => {
           const sourceElement = event.operation.source;
-          setActiveTaskId(sourceElement?.id?.toString() || null);
+          setActiveTaskId(sourceElement?.id.toString() || null);
         }}
         onDragOver={(event) => {
           const { source, target } = event.operation;
@@ -153,8 +155,8 @@ function Project() {
           );
           const destinationIndex = source.index;
 
-          let beforeId: number | null = null;
-          let afterId: number | null = null;
+          let beforeId: number | null;
+          let afterId: number | null;
 
           if (cleanTargetTasks.length === 0) {
             beforeId = null;

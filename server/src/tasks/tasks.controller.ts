@@ -3,7 +3,6 @@ import * as services from "./tasks.services.js";
 import z from "zod";
 import ApiError from "../lib/ApiError.js";
 import { TaskStatus } from "../prisma/enums.js";
-import { Task } from "../prisma/client.js";
 
 export const index = async (req: Request, res: Response) => {
   const tasks = await services.getAll(req.listId);

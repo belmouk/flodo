@@ -113,7 +113,7 @@ it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", as
 });
 
 it("GET api/tasks/:taskId", async () => {
-  const { admin, member, project, list, workspace } = await seedDB();
+  const { admin, member, list } = await seedDB();
   const task = await prisma.task.create({
     data: {
       listId: list.id,
@@ -184,7 +184,7 @@ it("PATCH api/tasks/:taskId", async () => {
 });
 
 it("DELETE api/tasks/:taskId", async () => {
-  const { admin, member, project, workspace, list } = await seedDB();
+  const { admin, member, list } = await seedDB();
   const task = await prisma.task.create({
     data: {
       listId: list.id,

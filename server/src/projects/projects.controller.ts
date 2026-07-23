@@ -9,7 +9,7 @@ export const index = async (req: Request, res: Response) => {
 };
 
 export const show = async (req: Request, res: Response) => {
-  let includes = { lists: false, members: false, tasks: false };
+  const includes = { lists: false, members: false, tasks: false };
   if (req.query.includes && typeof req.query.includes === "string") {
     const availableResources = new Set(Object.keys(includes));
     const requestedResources = new Set(req.query.includes.split(","));

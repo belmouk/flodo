@@ -1,10 +1,7 @@
-import { title } from "node:process";
 import ApiError from "../lib/ApiError.js";
 import { prisma } from "../lib/prisma.js";
 import { TaskStatus } from "../prisma/client.js";
 import type { Location } from "./tasks.controller.js";
-import { INSPECT_MAX_BYTES } from "node:buffer";
-import { keyof } from "zod";
 
 export const getAll = async (listId: number) => {
   return await prisma.task.findMany({
@@ -70,7 +67,7 @@ type UpdateInput = {
 };
 
 export const update = async (input: UpdateInput) => {
-  let cleanInput: Record<string, any> = {};
+  const cleanInput: Record<string, any> = {};
   const ignoredFields = new Set(["id", "location"]);
   for (const [key, value] of Object.entries(input)) {
     if (value !== undefined && value !== null && !ignoredFields.has(key)) {
