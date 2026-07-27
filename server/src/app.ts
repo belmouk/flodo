@@ -38,8 +38,8 @@ app.use(
     res: Response,
     _next: NextFunction
   ) => {
-    console.error(err);
     if (err instanceof ApiError) {
+      console.warn(`${err.status} ${err.code}`);
       return res.status(err.status).send({
         message: err.message,
         details: err.details,
@@ -47,6 +47,7 @@ app.use(
         status: err.status,
       });
     } else {
+      console.error(err);
       return res.status(500).send({
         message: "Oops something went wrong.",
         details: {},
