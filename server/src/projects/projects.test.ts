@@ -7,6 +7,7 @@ import {
   createAccessToken,
 } from "../auth/auth.services.js";
 import { User } from "../users/users.schema.js";
+import { Project } from "../../generated/prisma/client.js";
 
 const getAuthCookies = async (user: User) => {
   const [accessToken, refreshToken] = await Promise.all([
@@ -127,13 +128,14 @@ it("GET api/workspaces/:workspaceId/projects", async () => {
     .get(`/api/workspaces/${workspace.id}/projects`)
     .set("Cookie", cookies);
 
+  const body = res.body as Project[];
   expect(res.status).toBe(200);
-  expect(res.body).toHaveLength(2);
-  expect(res.body[0]).toMatchObject({
+  expect(body).toHaveLength(2);
+  expect(body[0]).toMatchObject({
     name: "first project",
     workspaceId: workspace.id,
   });
-  expect(res.body[1]).toMatchObject({
+  expect(body[1]).toMatchObject({
     name: "second project",
     workspaceId: workspace.id,
   });
@@ -168,9 +170,9 @@ it("POST api/workspaces/:workspaceId/projects", async () => {
     .set("Cookie", cookies);
 
   expect(res.status).toBe(200);
-  const id = parseInt(res.body.id, 10);
+  const body = res.body as Project;
 
-  const project = await prisma.project.findFirst({ where: { id } });
+  const project = await prisma.project.findFirst({ where: { id: body.id } });
   expect(project).not.toBeNull();
 });
 

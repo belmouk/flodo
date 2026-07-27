@@ -36,7 +36,7 @@ app.use(
     err: ErrorRequestHandler,
     req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
   ) => {
     console.error(err);
     if (err instanceof ApiError) {

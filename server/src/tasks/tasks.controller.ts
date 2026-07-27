@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import * as services from "./tasks.services.js";
 import z from "zod";
 import ApiError from "../lib/ApiError.js";
-import { TaskStatus } from "../prisma/enums.js";
+import type { TaskStatus } from "../../generated/prisma/enums.js";
 
 export const index = async (req: Request, res: Response) => {
   const tasks = await services.getAll(req.listId);
@@ -36,8 +36,8 @@ export const validateTaskRoute = async (
 
 export const create = async (
   req: Request<
-    any,
-    any,
+    unknown,
+    unknown,
     { title: string; description: string; dueAt: Date; assigneeId: number }
   >,
   res: Response
@@ -150,8 +150,8 @@ export type Location = { before: number | null; after: number | null };
 
 export const update = async (
   req: Request<
-    any,
-    any,
+    unknown,
+    unknown,
     {
       title?: string;
       description?: string;

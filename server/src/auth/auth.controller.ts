@@ -6,7 +6,7 @@ import ApiError from "../lib/ApiError.js";
 import { getById } from "../users/users.services.js";
 
 export const signup = async (
-  req: Request<any, any, UserSignup>,
+  req: Request<unknown, unknown, UserSignup>,
   res: Response
 ) => {
   const user = await services.createUser(req.body);
@@ -14,7 +14,7 @@ export const signup = async (
 };
 
 export const login = async (
-  req: Request<any, any, UserLogin>,
+  req: Request<unknown, unknown, UserLogin>,
   res: Response
 ) => {
   const user = await services.verifyLoginCredentials(req.body);

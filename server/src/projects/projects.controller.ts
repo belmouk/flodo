@@ -25,7 +25,7 @@ export const show = async (req: Request, res: Response) => {
 };
 
 export const create = async (
-  req: Request<any, any, { name: string }>,
+  req: Request<unknown, unknown, { name: string }>,
   res: Response
 ) => {
   const project = await services.create({
@@ -37,7 +37,7 @@ export const create = async (
 };
 
 export const update = async (
-  req: Request<any, any, { name: string }>,
+  req: Request<unknown, unknown, { name: string }>,
   res: Response
 ) => {
   const UserHasEditRights = await services.hasEditRights(
@@ -108,7 +108,6 @@ export const ensureProjectMembership = async (
   res: Response,
   next: NextFunction
 ) => {
-  console.log(req.user, req.projectId);
   if (!(await services.userIsProjectMember(req.userId, req.projectId)))
     throw new ApiError("Resource not accessible", 403, "UnAuthorizedAccess");
   return next();

@@ -6,13 +6,17 @@ export const UserSignupSchema = z.object({
     .trim()
     .min(1, "First name required")
     .max(100, "First name too long")
-    .transform((val) => val[0].toUpperCase() + val.slice(1).toLowerCase()),
+    .transform(
+      (val) => val.charAt(0).toUpperCase() + val.slice(1).toLowerCase()
+    ),
   lastName: z
     .string()
     .trim()
     .min(1, "Last name required")
     .max(100, "Last name too long")
-    .transform((val) => val[0].toUpperCase() + val.slice(1).toLowerCase()),
+    .transform(
+      (val) => val.charAt(0).toUpperCase() + val.slice(1).toLowerCase()
+    ),
   email: z
     .string()
     .trim()

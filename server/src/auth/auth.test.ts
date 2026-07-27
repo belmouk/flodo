@@ -3,6 +3,7 @@ import app from "../app.js";
 import { prisma } from "../lib/prisma.js";
 import { createUser } from "./auth.services.js";
 import { CookieAccessInfo } from "cookiejar";
+import { User, Workspace } from "../../generated/prisma/client.js";
 
 beforeEach(async () => {
   await prisma.$transaction([
@@ -167,6 +168,8 @@ describe("protected routes", () => {
       .post("/api/auth/signup")
       .send({ firstName, lastName, email, password });
 
+    const body1 = res1.body as Omit<User, "password">;
+
     await agent.post("/api/auth/login").send({ email, password });
     const workspace = await prisma.$transaction(async (tx) => {
       const ws = await tx.workspace.create({
@@ -174,14 +177,15 @@ describe("protected routes", () => {
         select: { name: true, id: true },
       });
       await tx.workspaceUser.create({
-        data: { userId: res1.body.id, workspaceId: ws.id, userRole: "ADMIN" },
+        data: { userId: body1.id, workspaceId: ws.id, userRole: "ADMIN" },
       });
       return ws;
     });
 
     const res = await agent.get("/api/workspaces");
+    const body = res.body as Workspace[];
     expect(res.status).toBe(200);
-    expect(res.body[0]).toMatchObject(workspace);
+    expect(body[0]).toMatchObject(workspace);
   });
 });
 

@@ -1,6 +1,6 @@
 import ApiError from "../lib/ApiError.js";
 import { prisma } from "../lib/prisma.js";
-import { TaskStatus } from "../prisma/client.js";
+import type { TaskStatus } from "../../generated/prisma/enums.js";
 import type { Location } from "./tasks.controller.js";
 
 export const getAll = async (listId: number) => {
@@ -67,7 +67,7 @@ type UpdateInput = {
 };
 
 export const update = async (input: UpdateInput) => {
-  const cleanInput: Record<string, any> = {};
+  const cleanInput: Record<string, unknown> = {};
   const ignoredFields = new Set(["id", "location"]);
   for (const [key, value] of Object.entries(input)) {
     if (value !== undefined && value !== null && !ignoredFields.has(key)) {

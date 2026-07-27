@@ -7,7 +7,8 @@ import {
   createAccessToken,
 } from "../auth/auth.services.js";
 
-import { User } from "../users/users.schema.js";
+import type { User } from "../users/users.schema.js";
+import type { Workspace } from "../../generated/prisma/client.js";
 
 const getAuthCookies = async (user: User) => {
   const [accessToken, refreshToken] = await Promise.all([
@@ -71,11 +72,11 @@ it("GET workspaces", async () => {
   const cookies = await getAuthCookies(user);
 
   const res = await request(app).get("/api/workspaces").set("Cookie", cookies);
-
+  const body = res.body as Workspace[];
   expect(res.status).toBe(200);
-  expect(res.body).toHaveLength(expectedWorkspaces.length);
-  expect(res.body[0]).toMatchObject(expectedWorkspaces[0]!);
-  expect(res.body[1]).toMatchObject(expectedWorkspaces[1]!);
+  expect(body).toHaveLength(expectedWorkspaces.length);
+  expect(body[0]).toMatchObject(expectedWorkspaces[0]!);
+  expect(body[1]).toMatchObject(expectedWorkspaces[1]!);
 });
 
 it("POST workplaces", async () => {

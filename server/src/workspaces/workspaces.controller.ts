@@ -20,7 +20,7 @@ export const show = async (req: Request, res: Response) => {
 };
 
 export const create = async (
-  req: Request<any, any, { name: string }>,
+  req: Request<unknown, unknown, { name: string }>,
   res: Response
 ) => {
   const workspace = await services.create({
@@ -31,7 +31,7 @@ export const create = async (
 };
 
 export const update = async (
-  req: Request<any, any, { name: string }>,
+  req: Request<unknown, unknown, { name: string }>,
   res: Response
 ) => {
   const hasUpdateRights = await services.hasUpdateRights(
@@ -86,7 +86,7 @@ export const validateWorkspaceRoute = (
 };
 
 export const validateWorkspaceInput = (
-  req: Request<any, any, { name: string }>,
+  req: Request<unknown, unknown, { name: string }>,
   res: Response,
   next: NextFunction
 ) => {

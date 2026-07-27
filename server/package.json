@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest --mode test",
-    "pretest": "dotenv -e .env.test -- npx prisma migrate deploy",
     "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest --mode test",
+    "pretest": "dotenv -e .env.test -- prisma migrate deploy",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier src --write"

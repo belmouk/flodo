@@ -31,8 +31,7 @@ export const validateListInput = (
     position: z.coerce
       .number()
       .int()
-      .positive("List position must be positive integer.")
-      .optional(),
+      .positive("List position must be positive integer."),
   });
 
   const result = schema.safeParse(req.body);
@@ -49,7 +48,10 @@ export const index = async (req: Request, res: Response) => {
   return res.json(result);
 };
 
-export const create = async (req: Request, res: Response) => {
+export const create = async (
+  req: Request<unknown, unknown, { name: string }>,
+  res: Response
+) => {
   const newList = await services.create(req.projectId, req.body.name);
   return res.json(newList);
 };
@@ -61,7 +63,10 @@ export const show = async (req: Request, res: Response) => {
   return res.json(result);
 };
 
-export const update = async (req: Request, res: Response) => {
+export const update = async (
+  req: Request<unknown, unknown, { name: string; position: number }>,
+  res: Response
+) => {
   const updatedList = await services.update(
     req.listId,
     req.body.name,

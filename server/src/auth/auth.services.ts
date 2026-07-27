@@ -5,7 +5,7 @@ import { UserLogin, UserSignup } from "./auth.schema.js";
 import { jwtVerify, SignJWT, base64url } from "jose";
 import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
-import { RefreshToken } from "../prisma/client.js";
+import type { RefreshToken } from "../../generated/prisma/client.js";
 import { JWTExpired, JWTInvalid } from "jose/errors";
 
 interface MyTokenPayload {

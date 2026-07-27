@@ -9,7 +9,7 @@ import { Request, Response, NextFunction } from "express";
 import * as z from "zod";
 
 export const validateUserSignup = (
-  req: Request<any, any, UserSignup>,
+  req: Request<unknown, unknown, UserSignup>,
   res: Response,
   next: NextFunction
 ) => {
@@ -24,7 +24,7 @@ export const validateUserSignup = (
 };
 
 export const validateUserLogin = (
-  req: Request<any, any, UserLogin>,
+  req: Request<unknown, unknown, UserLogin>,
   res: Response,
   next: NextFunction
 ) => {

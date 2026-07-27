@@ -8,7 +8,7 @@ export const ensureAuth = async (
   res: Response,
   next: NextFunction
 ) => {
-  const accessToken: string | undefined = req.cookies?.accessToken;
+  const accessToken = req.cookies?.accessToken as string | undefined;
 
   if (accessToken) {
     const encodedSecret = base64url.decode(CONFIG.ACCESS_TOKEN_SECRET);
