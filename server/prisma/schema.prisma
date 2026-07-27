@@ -45,11 +45,15 @@ model TeamUser {
   userRole TeamUserRole
   assignedAt DateTime @default(now()) @map("assigned_at")
   @@id([userId, teamId])
+
+  @@map("team_users")
 }
 
 enum TeamUserRole {
   ADMIN
   MEMBER
+
+  @@map("team_user_role")
 }
 
 model Workspace {
@@ -73,11 +77,14 @@ model WorkspaceUser {
   userRole WorkspaceUserRole
   
   @@id([userId, workspaceId])
+  @@map("workspace_users")
 }
 
 enum WorkspaceUserRole {
   ADMIN
   MEMBER
+
+  @@map("workspace_user_role")
 }
 
 model Project {
@@ -100,12 +107,16 @@ model ProjectUser {
   projectId Int @map("project_id")
   assignedAt DateTime @default(now()) @map("assigned_at")
   userRole ProjectUserRole
+
   @@id([userId, projectId])
+  @@map("project_users")
 }
 
 enum ProjectUserRole {
   OWNER
   MEMBER
+
+  @@map("project_user_role")
 }
 
 model List {
@@ -142,12 +153,15 @@ enum TaskStatus {
   DONE
   WIP
   OVERDUE
+
   @@map("task_status")
 }
 
 enum TaskUserRole {
   ASSIGNER
   ASSIGNEE
+
+  @@map("task_user_role")
 }
 
 model RefreshToken {

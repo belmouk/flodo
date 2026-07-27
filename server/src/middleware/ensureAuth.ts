@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { jwtVerify, errors } from "jose";
+import { jwtVerify, errors, base64url } from "jose";
 import CONFIG from "../lib/config.js";
 import ApiError from "../lib/ApiError.js";
 
@@ -11,11 +11,12 @@ export const ensureAuth = async (
   const accessToken: string | undefined = req.cookies?.accessToken;
 
   if (accessToken) {
-    const encodedSecret = new TextEncoder().encode(CONFIG.ACCESS_TOKEN_SECRET);
+    const encodedSecret = base64url.decode(CONFIG.ACCESS_TOKEN_SECRET);
     try {
       const { payload } = await jwtVerify(accessToken, encodedSecret, {
         issuer: CONFIG.JWT_ISSUER,
         audience: CONFIG.JWT_AUDIENCE,
+        algorithms: ["HS256"],
       });
       if (payload.sub) {
         req.userId = parseInt(payload.sub, 10);

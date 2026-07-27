@@ -2,7 +2,7 @@ import ApiError from "../lib/ApiError.js";
 import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcrypt";
 import { UserLogin, UserSignup } from "./auth.schema.js";
-import { jwtVerify, SignJWT } from "jose";
+import { jwtVerify, SignJWT, base64url } from "jose";
 import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
 import { RefreshToken } from "../prisma/client.js";
@@ -62,7 +62,7 @@ export const verifyLoginCredentials = async ({
 };
 
 export const createAccessToken = async (userId: number) => {
-  const encodedSecret = new TextEncoder().encode(CONFIG.ACCESS_TOKEN_SECRET);
+  const encodedSecret = base64url.decode(CONFIG.ACCESS_TOKEN_SECRET);
   const jti = randomUUID();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
@@ -80,7 +80,7 @@ export const createAccessToken = async (userId: number) => {
 };
 
 export const createRefreshToken = async (userId: number) => {
-  const encodedSecret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
+  const encodedSecret = base64url.decode(CONFIG.REFRESH_TOKEN_SECRET);
   const jti = randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -120,15 +120,15 @@ export const createNewTokens = async (refreshToken: RefreshToken) => {
 };
 
 type Result =
-  | { success: true; data: RefreshToken }
-  | { success: false; error: string };
+  { success: true; data: RefreshToken } | { success: false; error: string };
 
 export const validateRefreshToken = async (token: string): Promise<Result> => {
   try {
-    const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
+    const secret = base64url.decode(CONFIG.REFRESH_TOKEN_SECRET);
     const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
       issuer: CONFIG.JWT_ISSUER,
       audience: CONFIG.JWT_AUDIENCE,
+      algorithms: ["HS256"],
     });
     const refreshToken = await prisma.refreshToken.findUnique({
       where: { jti: payload.jti, expiresAt: { gt: new Date() } },
@@ -147,20 +147,22 @@ export const validateRefreshToken = async (token: string): Promise<Result> => {
 };
 
 export const deleteRefreshToken = async (token: string) => {
-  const secret = new TextEncoder().encode(CONFIG.REFRESH_TOKEN_SECRET);
+  const secret = base64url.decode(CONFIG.REFRESH_TOKEN_SECRET);
   const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
     audience: CONFIG.JWT_AUDIENCE,
     issuer: CONFIG.JWT_ISSUER,
+    algorithms: ["HS256"],
   });
   await prisma.refreshToken.deleteMany({ where: { jti: payload.jti } });
 };
 
 export const getUserId = async (token: string) => {
   try {
-    const secret = new TextEncoder().encode(CONFIG.ACCESS_TOKEN_SECRET);
+    const secret = base64url.decode(CONFIG.ACCESS_TOKEN_SECRET);
     const { payload } = await jwtVerify<MyTokenPayload>(token, secret, {
       issuer: CONFIG.JWT_ISSUER,
       audience: CONFIG.JWT_AUDIENCE,
+      algorithms: ["HS256"],
     });
     const userId = parseInt(payload.sub, 10);
     return await prisma.user.findUnique({
