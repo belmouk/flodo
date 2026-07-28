@@ -1,15 +1,14 @@
 import app from "./app.js";
 import CONFIG from "./lib/config.js";
 import { prisma } from "./lib/prisma.js";
+import logger from "./lib/logger.js";
 
-const PORT = CONFIG.PORT;
-
-const server = app.listen(PORT, () => {
-  console.log(`Server listening on ${PORT}...`);
+const server = app.listen(CONFIG.PORT, () => {
+  logger.info({ port: CONFIG.PORT }, "Server listening");
 });
 
 server.on("error", (err) => {
-  console.error(err);
+  logger.error({ err }, "Server initialization error");
   process.exit(1);
 });
 
@@ -18,7 +17,7 @@ const disconnect = async () => {
     await prisma.$disconnect();
     process.exit(0);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Server disconnection error");
     process.exit(1);
   }
 };
@@ -28,17 +27,17 @@ let shuttingDown = false;
 const shutdown = (signal: string) => {
   if (shuttingDown) return;
   shuttingDown = true;
-  console.log(`${signal} received, shutting down...`);
+  logger.info({ signal }, "Server is shutting down");
 
   const forceShutdown = setTimeout(() => {
-    console.error("Graceful shutdown timed out.");
+    logger.error("Graceful shutdown timed out.");
     process.exit(1);
   }, 10_000);
 
   server.close(() => {
     clearTimeout(forceShutdown);
 
-    console.log("HTTP server closed.");
+    logger.info("HTTP server closed.");
 
     void disconnect();
   });
@@ -47,11 +46,11 @@ const shutdown = (signal: string) => {
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("uncaughtException", (err) => {
-  console.error(err);
+  logger.error({ err }, "Uncaught exception error");
   process.exit(1);
 });
 
 process.on("unhandledRejection", (reason) => {
-  console.error(reason);
+  logger.error({ err: reason }, "Unhandled rejection error");
   process.exit(1);
 });

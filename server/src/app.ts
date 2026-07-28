@@ -9,12 +9,14 @@ import workspacesRouter from "./workspaces/workspaces.routes.js";
 import projectsRouter from "./projects/projects.routes.js";
 import listsRouter from "./lists/lists.routes.js";
 import tasksRouter from "./tasks/tasks.routes.js";
+import requestLogger from "./middleware/requestLogger.js";
 
 const app = express();
 
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
+app.use(requestLogger);
 
 app.get("/health", (req: Request, res: Response) => res.json({ status: "ok" }));
 
@@ -41,7 +43,16 @@ app.use(
     _next: NextFunction
   ) => {
     if (err instanceof ApiError) {
-      console.warn(`${err.status} ${err.code}`);
+      type WarnJSONType = {
+        status: number;
+        code: string;
+        details?: Record<string, string[] | undefined>;
+      };
+      const warnJSON: WarnJSONType = { status: err.status, code: err.code };
+      if (Object.keys(err.details).length > 0) {
+        warnJSON["details"] = err.details;
+      }
+      req.log.warn(warnJSON, err.message);
       return res.status(err.status).send({
         message: err.message,
         details: err.details,
@@ -49,7 +60,14 @@ app.use(
         status: err.status,
       });
     } else {
-      console.error(err);
+      req.log.error(
+        {
+          err,
+          path: req.originalUrl,
+          method: req.method,
+        },
+        "Unhandled application error"
+      );
       return res.status(500).send({
         message: "Oops something went wrong.",
         details: {},
