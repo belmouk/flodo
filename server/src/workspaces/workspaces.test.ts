@@ -9,6 +9,7 @@ import {
 
 import type { User } from "../users/users.schema.js";
 import type { Workspace } from "../../generated/prisma/client.js";
+import { describe, it, expect, beforeEach } from "vitest";
 
 const getAuthCookies = async (user: User) => {
   const [accessToken, refreshToken] = await Promise.all([

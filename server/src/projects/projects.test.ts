@@ -8,6 +8,7 @@ import {
 } from "../auth/auth.services.js";
 import { User } from "../users/users.schema.js";
 import { Project } from "../../generated/prisma/client.js";
+import { describe, it, expect, beforeEach } from "vitest";
 
 const getAuthCookies = async (user: User) => {
   const [accessToken, refreshToken] = await Promise.all([

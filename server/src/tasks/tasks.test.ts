@@ -7,6 +7,7 @@ import {
   createAccessToken,
 } from "../auth/auth.services.js";
 import { User } from "../users/users.schema.js";
+import { it, expect, beforeEach } from "vitest";
 
 const getAuthCookies = async (user: User) => {
   const [accessToken, refreshToken] = await Promise.all([

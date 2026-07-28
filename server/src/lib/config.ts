@@ -1,17 +1,23 @@
-const getEnv = (key: string): string => {
-  const value = process.env[key];
-  if (!value) throw new Error(`Missing environment variable ${key}`);
-  return value;
-};
+import z from "zod";
 
-const CONFIG = {
-  DATABASE_URL: getEnv("DATABASE_URL"),
-  PORT: getEnv("PORT"),
-  REFRESH_TOKEN_SECRET: getEnv("REFRESH_TOKEN_SECRET"),
-  ACCESS_TOKEN_SECRET: getEnv("ACCESS_TOKEN_SECRET"),
-  JWT_ISSUER: getEnv("JWT_ISSUER"),
-  JWT_AUDIENCE: getEnv("JWT_AUDIENCE"),
-  NODE_ENV: getEnv("NODE_ENV"),
-};
+const schema = z.object({
+  DATABASE_URL: z.url(),
+  PORT: z.coerce.number().int().positive(),
+  REFRESH_TOKEN_SECRET: z.base64url(),
+  ACCESS_TOKEN_SECRET: z.base64url(),
+  JWT_ISSUER: z.url(),
+  JWT_AUDIENCE: z.url(),
+  NODE_ENV: z.enum(["production", "test", "development"]),
+});
 
-export default CONFIG;
+const result = schema.safeParse(process.env);
+
+if (!result.success) {
+  console.error(
+    "Invalid environment configuration:\n",
+    JSON.stringify(z.flattenError(result.error).fieldErrors, null, 2)
+  );
+  process.exit(1);
+}
+
+export default result.data;

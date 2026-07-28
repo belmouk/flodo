@@ -7,7 +7,6 @@ export default defineConfig(({ mode }) => {
   return {
     test: {
       environment: "node",
-      globals: true,
       fileParallelism: false,
 
       env: env,

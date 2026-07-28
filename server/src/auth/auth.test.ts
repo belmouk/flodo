@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { createUser } from "./auth.services.js";
 import { CookieAccessInfo } from "cookiejar";
 import { User, Workspace } from "../../generated/prisma/client.js";
+import { describe, it, expect, beforeEach } from "vitest";
 
 beforeEach(async () => {
   await prisma.$transaction([
