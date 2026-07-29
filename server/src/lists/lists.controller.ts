@@ -31,7 +31,8 @@ export const validateListInput = (
     position: z.coerce
       .number()
       .int()
-      .positive("List position must be positive integer."),
+      .positive("List position must be positive integer.")
+      .optional(),
   });
 
   const result = schema.safeParse(req.body);
