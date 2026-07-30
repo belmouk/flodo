@@ -1,11 +1,22 @@
 {
   "name": "flodo",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "12.0.1"
+    }
+  },
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
+    "dev": "DO_NOT_TRACK=1 turbo run dev",
+    "build": "DO_NOT_TRACK=1 turbo run build"
   },
   "repository": {
     "type": "git",
@@ -20,6 +31,6 @@
   },
   "homepage": "https://github.com/belmouk/flodo#readme",
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "turbo": "^2.10.6"
   }
 }

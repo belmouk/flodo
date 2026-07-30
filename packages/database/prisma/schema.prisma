@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  firstName String @map("first_name")
+  lastName String @map("last_name")
+  email String @unique
+  password String
+  teamMemberships TeamUser[]
+  projectMemberships ProjectUser[]
+  tasksToDo Task[] @relation("taskAssignee")
+  tasksToReview Task[] @relation("taskAssigner")
+  workspaceMemberships WorkspaceUser[]
+  token RefreshToken[]
+
+  @@map("users")
+}
+
+model Team {
+  id Int @id @default(autoincrement())
+  name String
+  members TeamUser[]
+  workspaces Workspace[]
+
+  @@map("teams")
+}
+
+model TeamUser {
+  team Team @relation(fields: [teamId], references: [id])
+  teamId Int @map("team_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int @map("user_id")
+  userRole TeamUserRole
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  @@id([userId, teamId])
+
+  @@map("team_users")
+}
+
+enum TeamUserRole {
+  ADMIN
+  MEMBER
+
+  @@map("team_user_role")
+}
+
+model Workspace {
+  id Int @id @default(autoincrement())
+  name String
+  createdAt DateTime @default(now()) @map("created_at")
+  members WorkspaceUser[]
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId Int? @map("team_id")
+  projects Project[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceUser {
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int @map("user_id")
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId Int @map("workspace_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  userRole WorkspaceUserRole
+  
+  @@id([userId, workspaceId])
+  @@map("workspace_users")
+}
+
+enum WorkspaceUserRole {
+  ADMIN
+  MEMBER
+
+  @@map("workspace_user_role")
+}
+
+model Project {
+  id Int @id @default(autoincrement())
+  name String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  members ProjectUser[]
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId Int @map("workspace_id")
+  lists List[]
+  
+  @@map("projects")
+}
+
+model ProjectUser {
+  user User @relation(fields: [userId], references: [id])
+  userId Int @map("user_id")
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int @map("project_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  userRole ProjectUserRole
+
+  @@id([userId, projectId])
+  @@map("project_users")
+}
+
+enum ProjectUserRole {
+  OWNER
+  MEMBER
+
+  @@map("project_user_role")
+}
+
+model List {
+  id Int @id @default(autoincrement())
+  name String
+  tasks Task[]
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int @map("project_id")
+  position Int @default(autoincrement())
+
+  @@map("lists")
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+  title String
+  description String?
+  status TaskStatus @default(WIP)
+  dueAt DateTime @map("due_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+  assigner User @relation("taskAssigner",fields: [assignerId], references: [id])
+  assignerId Int @map("assigner_id")
+  assignee User @relation("taskAssignee", fields: [assigneeId], references: [id])
+  assigneeId Int @map("assignee_id")
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  listId Int @map("list_id")
+  position Int @default(autoincrement())
+  
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  DONE
+  WIP
+  OVERDUE
+
+  @@map("task_status")
+}
+
+enum TaskUserRole {
+  ASSIGNER
+  ASSIGNEE
+
+  @@map("task_user_role")
+}
+
+model RefreshToken {
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime 
+  jti String @unique
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+  
+  @@map("refresh_tokens")
+}
