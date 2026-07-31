@@ -1,5 +1,5 @@
 import type { Task } from "@repo/db";
-import ControlPanel from "./controlPanel";
+import ControlPanel from "./ControlPanel";
 import TaskUpdate from "./tasks/TaskUpdate";
 import TaskDelete from "./tasks/TaskDelete";
 import { useSortable } from "@dnd-kit/react/sortable";

@@ -1,6 +1,6 @@
 import type React from "react";
 import type { List, Task } from "@repo/db";
-import ControlPanel from "./controlPanel";
+import ControlPanel from "./ControlPanel";
 import ListUpdate from "./lists/ListUpdate";
 import ListDelete from "./lists/ListDelete";
 import TaskCreate from "./tasks/TaskCreate";

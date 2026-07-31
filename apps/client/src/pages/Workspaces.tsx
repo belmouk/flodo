@@ -3,10 +3,10 @@ import { Outlet, useOutletContext, Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
 import type { Workspace } from "@repo/db";
-import ControlPanel from "@/components/controlPanel";
-import WorkspaceCreate from "@/components/workspaces/workspaceCreate";
-import WorkspaceDelete from "@/components/workspaces/workspaceDelete";
-import WorkspaceUpdate from "@/components/workspaces/workspaceUpdate";
+import ControlPanel from "@/components/ControlPanel";
+import WorkspaceCreate from "@/components/workspaces/WorkspaceCreate";
+import WorkspaceDelete from "@/components/workspaces/WorkspaceDelete";
+import WorkspaceUpdate from "@/components/workspaces/WorkspaceUpdate";
 
 function Workspaces() {
   const { workspaceId } = useParams();

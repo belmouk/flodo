@@ -1,4 +1,4 @@
-import ProjectChange from "./projectChange";
+import ProjectChange from "./ProjectChange";
 
 interface ProjectCreateProps {
   workspaceId: number;

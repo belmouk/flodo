@@ -1,4 +1,4 @@
-import WorkspaceChange from "./workspaceChange";
+import WorkspaceChange from "./WorkspaceChange";
 
 function WorkspaceCreate() {
   return <WorkspaceChange HTTPMethod="POST" />;

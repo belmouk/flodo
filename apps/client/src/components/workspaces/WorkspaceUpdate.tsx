@@ -1,4 +1,4 @@
-import WorkspaceChange from "./workspaceChange";
+import WorkspaceChange from "./WorkspaceChange";
 
 interface WorkspaceUpdateProps {
   workspaceId: number;

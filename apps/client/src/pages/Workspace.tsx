@@ -2,12 +2,12 @@ import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
 import type { Project } from "@repo/db";
-import ControlPanel from "@/components/controlPanel";
-import ProjectCreate from "@/components/projects/projectCreate";
-import ProjectDelete from "@/components/projects/projectDelete";
-import ProjectUpdate from "@/components/projects/projectUpdate";
+import ControlPanel from "@/components/ControlPanel";
+import ProjectCreate from "@/components/projects/ProjectCreate";
+import ProjectDelete from "@/components/projects/ProjectDelete";
+import ProjectUpdate from "@/components/projects/ProjectUpdate";
 import { useState } from "react";
-import ProjectOpen from "@/components/projects/projectOpen";
+import ProjectOpen from "@/components/projects/ProjectOpen";
 
 function Workspace() {
   const { workspaceId } = useParams();
