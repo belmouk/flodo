@@ -7,6 +7,14 @@ import { getById } from "../users/users.services.js";
 import { UserLoginSchema, UserSignupSchema } from "@repo/types";
 import * as z from "zod";
 
+const getCookieOptions = (maxAge?: number) => ({
+  ...(maxAge !== undefined && { maxAge }),
+  httpOnly: true,
+  secure: CONFIG.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+});
+
 export const signup = async (
   req: Request<unknown, unknown, UserSignup>,
   res: Response
@@ -26,89 +34,65 @@ export const login = async (
     services.createRefreshToken(user.id),
   ]);
 
-  res.cookie("refreshToken", refreshToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    secure: CONFIG.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
-  res.cookie("accessToken", accessToken, {
-    maxAge: 15 * 60 * 1000,
-    httpOnly: true,
-    secure: CONFIG.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
+  res.cookie(
+    "refreshToken",
+    refreshToken,
+    getCookieOptions(7 * 24 * 60 * 60 * 1000)
+  );
+  res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
 
   return res.sendStatus(204);
 };
 
 export const refresh = async (req: Request, res: Response) => {
   const token = req.cookies?.refreshToken as string | undefined;
-  if (!token)
+  if (!token) {
     throw new ApiError("Missing refresh token", 401, "MissingRefreshToken");
+  }
 
   const result = await services.validateRefreshToken(token);
   if (!result.success) {
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: CONFIG.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: CONFIG.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+    res.clearCookie("refreshToken", getCookieOptions());
+    res.clearCookie("accessToken", getCookieOptions());
     throw new ApiError("Invalid refresh token", 401, result.error);
   }
+
   const validatedRefreshToken = result.data;
+
   const user = await getById(validatedRefreshToken.userId);
   if (!user) {
-    await services.deleteRefreshToken(token);
+    await services.deleteRefreshToken(token).catch(() => {});
+    res.clearCookie("refreshToken", getCookieOptions());
+    res.clearCookie("accessToken", getCookieOptions());
     throw new ApiError("Invalid token", 401, "InvalidRefreshToken");
   }
-  const { refreshToken, accessToken } = await services.createNewTokens(
-    validatedRefreshToken
-  );
 
-  res.cookie("refreshToken", refreshToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    secure: CONFIG.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
-  res.cookie("accessToken", accessToken, {
-    maxAge: 15 * 60 * 1000,
-    httpOnly: true,
-    secure: CONFIG.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
+  try {
+    const { refreshToken, accessToken } = await services.createNewTokens(
+      validatedRefreshToken
+    );
 
-  return res.json(user);
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getCookieOptions(7 * 24 * 60 * 60 * 1000)
+    );
+    res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
+
+    return res.json(user);
+  } catch (error) {
+    res.clearCookie("refreshToken", getCookieOptions());
+    res.clearCookie("accessToken", getCookieOptions());
+    throw error;
+  }
 };
 
 export const logout = async (req: Request, res: Response) => {
   const refreshToken = req.cookies?.refreshToken as string | undefined;
   if (refreshToken) {
     await services.deleteRefreshToken(refreshToken);
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: CONFIG.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: CONFIG.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+    res.clearCookie("refreshToken", getCookieOptions());
+    res.clearCookie("accessToken", getCookieOptions());
   }
   return res.sendStatus(204);
 };
@@ -116,12 +100,7 @@ export const logout = async (req: Request, res: Response) => {
 export const me = async (req: Request, res: Response) => {
   const refreshToken = req.cookies?.refreshToken as string | undefined;
   if (!refreshToken) {
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: CONFIG.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+    res.clearCookie("accessToken", getCookieOptions());
     throw new ApiError("Missing refresh Token", 401, "MissingRefreshToken");
   }
   const accessToken = req.cookies?.accessToken as string | undefined;
@@ -129,12 +108,7 @@ export const me = async (req: Request, res: Response) => {
     throw new ApiError("Expired access token", 401, "ExpiredAccessToken");
   const user = await services.getUserId(accessToken);
   if (!user) {
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: CONFIG.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+    res.clearCookie("accessToken", getCookieOptions());
     throw new ApiError("Invalid access token", 401, "InvalidAccessToken");
   }
   return res.json(user);

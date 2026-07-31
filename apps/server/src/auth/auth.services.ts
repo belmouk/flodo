@@ -7,6 +7,7 @@ import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
 import type { RefreshToken } from "@repo/db";
 import { JWTExpired, JWTInvalid } from "jose/errors";
+import { Prisma } from "@repo/db";
 
 interface MyTokenPayload {
   iss: string;
@@ -110,13 +111,56 @@ export const saveRefreshToken = async ({
   });
 };
 
-export const createNewTokens = async (refreshToken: RefreshToken) => {
-  const [newAccessToken, newRefreshToken] = await Promise.all([
-    createAccessToken(refreshToken.userId),
-    createRefreshToken(refreshToken.userId),
-  ]);
+export const createNewTokens = async (oldRefreshToken: RefreshToken) => {
+  let newTokensData;
 
-  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  try {
+    newTokensData = await prisma.$transaction(async (tx) => {
+      await tx.refreshToken.delete({
+        where: { jti: oldRefreshToken.jti },
+      });
+
+      const jti = randomUUID();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      await tx.refreshToken.create({
+        data: {
+          jti,
+          expiresAt,
+          user: { connect: { id: oldRefreshToken.userId } },
+        },
+      });
+
+      return { jti, expiresAt };
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      throw new ApiError(
+        "Refresh token has already been used",
+        401,
+        "InvalidRefreshToken"
+      );
+    }
+    throw error;
+  }
+
+  const encodedSecret = base64url.decode(CONFIG.REFRESH_TOKEN_SECRET);
+
+  const refreshToken = await new SignJWT()
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(newTokensData.expiresAt)
+    .setAudience(CONFIG.JWT_AUDIENCE)
+    .setIssuer(CONFIG.JWT_ISSUER)
+    .setJti(newTokensData.jti)
+    .sign(encodedSecret);
+
+  const accessToken = await createAccessToken(oldRefreshToken.userId);
+
+  return { accessToken, refreshToken };
 };
 
 type Result =
@@ -131,7 +175,7 @@ export const validateRefreshToken = async (token: string): Promise<Result> => {
       algorithms: ["HS256"],
     });
     const refreshToken = await prisma.refreshToken.findUnique({
-      where: { jti: payload.jti, expiresAt: { gt: new Date() } },
+      where: { jti: payload.jti },
     });
     if (!refreshToken) return { success: false, error: "InvalidRefreshToken" };
     return { success: true, data: refreshToken };
