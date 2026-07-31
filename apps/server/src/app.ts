@@ -54,7 +54,7 @@ app.use(
         details?: Record<string, string[] | undefined>;
       };
       const warnJSON: WarnJSONType = { status: err.status, code: err.code };
-      if (Object.keys(err.details).length > 0) {
+      if (err.details && Object.keys(err.details).length > 0) {
         warnJSON["details"] = err.details;
       }
       req.log.warn(warnJSON, err.message);

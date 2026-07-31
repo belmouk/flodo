@@ -35,27 +35,32 @@ interface CreateInput {
 }
 
 export const create = async ({ workspaceId, name, userId }: CreateInput) => {
-  const project = await prisma.project.create({ data: { name, workspaceId } });
+  return await prisma.$transaction(async (tx) => {
+    const project = await tx.project.create({ data: { name, workspaceId } });
 
-  type Role = "OWNER" | "MEMBER";
-  type Data = { userId: number; userRole: Role; projectId: number };
+    const workspaceUsers = await tx.workspaceUser.findMany({
+      where: { workspaceId },
+      select: { userId: true, userRole: true },
+    });
+    type ProjectUsers = {
+      userId: number;
+      projectId: number;
+      userRole: "OWNER" | "MEMBER";
+    };
+    const projectUsers: ProjectUsers[] = workspaceUsers.map((user) => ({
+      userId: user.userId,
+      projectId: project.id,
+      userRole:
+        user.userRole === "ADMIN" || user.userId === userId
+          ? "OWNER"
+          : "MEMBER",
+    }));
 
-  const workspaceUsers = await prisma.workspaceUser.findMany({
-    where: { workspaceId },
-    select: { userId: true, userRole: true },
+    await tx.projectUser.createMany({
+      data: projectUsers,
+    });
+    return project;
   });
-  const projectUsers: Data[] = workspaceUsers.map((user) => {
-    if (user.userRole === "ADMIN" || user.userId === userId) {
-      return { userId: user.userId, userRole: "OWNER", projectId: project.id };
-    } else {
-      return { userId: user.userId, userRole: "MEMBER", projectId: project.id };
-    }
-  });
-
-  await prisma.projectUser.createMany({
-    data: projectUsers,
-  });
-  return project;
 };
 
 export const update = async (projectId: number, name: string) => {

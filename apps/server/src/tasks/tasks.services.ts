@@ -97,26 +97,31 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
           before: 0,
           after: 0,
         };
-        await prisma.$transaction(async (tx) => {
-          const tasks = await tx.task.findMany({
-            where: { listId },
-            orderBy: { position: "asc" },
-            select: { id: true, position: true, listId: true },
-          });
-          if (tasks.length > 0) {
-            for (const [i, task] of tasks.entries()) {
-              const newTask = await tx.task.update({
-                where: { listId: task.listId, id: task.id },
-                data: { position: POSITION_INCREMENT * (i + 1) },
-                select: { position: true, id: true },
-              });
-              if (newTask.id === neighborBefore.id)
-                newNeighborPositions.before = newTask.position;
-              if (newTask.id === neighborAfter.id)
-                newNeighborPositions.after = newTask.position;
-            }
-          }
+
+        const tasks = await prisma.task.findMany({
+          where: { listId },
+          orderBy: { position: "asc" },
+          select: { id: true },
         });
+
+        if (tasks.length > 0) {
+          const updateOperations = tasks.map((task, i) => {
+            const newPos = POSITION_INCREMENT * (i + 1);
+
+            if (task.id === neighborBefore.id)
+              newNeighborPositions.before = newPos;
+            if (task.id === neighborAfter.id)
+              newNeighborPositions.after = newPos;
+
+            return prisma.task.update({
+              where: { id: task.id },
+              data: { position: newPos },
+            });
+          });
+
+          await prisma.$transaction(updateOperations);
+        }
+
         newPosition = Math.floor(
           (newNeighborPositions.before + newNeighborPositions.after) / 2
         );
@@ -158,23 +163,23 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
         newPosition === neighborAfter.position
       ) {
         newPosition = POSITION_INCREMENT;
-        await prisma.$transaction(async (tx) => {
-          const tasks = await tx.task.findMany({
-            where: { listId },
-            orderBy: { position: "asc" },
-            select: { id: true, position: true, listId: true },
-          });
-          if (tasks.length > 0) {
-            for (const [i, task] of tasks.entries()) {
-              console.log(i);
-              console.log(task);
-              await tx.task.update({
-                where: { listId: task.listId, id: task.id },
-                data: { position: POSITION_INCREMENT * (i + 1) + 1000 },
-              });
-            }
-          }
+
+        const tasks = await prisma.task.findMany({
+          where: { listId },
+          orderBy: { position: "asc" },
+          select: { id: true },
         });
+
+        if (tasks.length > 0) {
+          const updateOperations = tasks.map((task, i) => {
+            return prisma.task.update({
+              where: { id: task.id },
+              data: { position: POSITION_INCREMENT * (i + 1) + 1000 },
+            });
+          });
+
+          await prisma.$transaction(updateOperations);
+        }
       }
       return await prisma.task.update({
         where: { id },
