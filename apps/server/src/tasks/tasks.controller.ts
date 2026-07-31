@@ -1,8 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import * as services from "./tasks.services.js";
-import z from "zod";
+import * as z from "zod";
 import { ApiError } from "@repo/utils";
-import type { TaskStatus } from "../../generated/prisma/enums.js";
+import { TaskCreationSchema, TaskUpdateSchema } from "@repo/types";
+import type { TaskCreationInput, TaskUpdateInput } from "@repo/types";
 
 export const index = async (req: Request, res: Response) => {
   const tasks = await services.getAll(req.listId);
@@ -35,11 +36,7 @@ export const validateTaskRoute = async (
 };
 
 export const create = async (
-  req: Request<
-    unknown,
-    unknown,
-    { title: string; description: string; dueAt: Date; assigneeId: number }
-  >,
+  req: Request<unknown, unknown, TaskCreationInput>,
   res: Response
 ) => {
   const task = await services.create({
@@ -55,24 +52,7 @@ export const validateTaskCreation = (
   res: Response,
   next: NextFunction
 ) => {
-  const schema = z.object({
-    title: z
-      .string()
-      .trim()
-      .min(1, "Specify the task")
-      .max(255, "Task title is too long"),
-    dueAt: z.coerce.date("Due date should be of type date"),
-    description: z
-      .string()
-      .trim()
-      .max(5000, "Description content is too long")
-      .optional(),
-    assigneeId: z.coerce
-      .number()
-      .int()
-      .positive("AssigneeId must be a positive integer"),
-  });
-  const result = schema.safeParse(req.body);
+  const result = TaskCreationSchema.safeParse(req.body);
   if (!result.success) {
     const errors = z.flattenError(result.error).fieldErrors;
     throw new ApiError(
@@ -91,48 +71,7 @@ export const validateTaskUpdate = (
   res: Response,
   next: NextFunction
 ) => {
-  const schema = z.object({
-    title: z
-      .string()
-      .trim()
-      .min(1, "Specify the task")
-      .max(255, "Task title is too long")
-      .optional(),
-    description: z
-      .string()
-      .trim()
-      .max(5000, "Description content is too long")
-      .optional(),
-    dueAt: z.coerce.date("Due date should be of type date").optional(),
-    assigneeId: z.coerce
-      .number()
-      .int()
-      .positive("AssigneeId must be a positive integer")
-      .optional(),
-    status: z
-      .enum(["WIP", "DONE", "OVERDUE"], "Task status not found")
-      .optional(),
-    listId: z.coerce
-      .number()
-      .int()
-      .positive("listId must be a positive integer")
-      .optional(),
-    location: z
-      .object({
-        before: z.coerce
-          .number()
-          .int()
-          .nonnegative("Position before must be a positive integer")
-          .nullable(),
-        after: z.coerce
-          .number()
-          .int()
-          .nonnegative("Position after must be a positive integer")
-          .nullable(),
-      })
-      .optional(),
-  });
-  const result = schema.safeParse(req.body);
+  const result = TaskUpdateSchema.safeParse(req.body);
   if (!result.success) {
     const errors = z.flattenError(result.error).fieldErrors;
     throw new ApiError(
@@ -146,22 +85,8 @@ export const validateTaskUpdate = (
   return next();
 };
 
-export type Location = { before: number | null; after: number | null };
-
 export const update = async (
-  req: Request<
-    unknown,
-    unknown,
-    {
-      title?: string;
-      description?: string;
-      dueAt?: Date;
-      assigneeId?: number;
-      status?: TaskStatus;
-      location?: Location;
-      listId: number;
-    }
-  >,
+  req: Request<unknown, unknown, TaskUpdateInput>,
   res: Response
 ) => {
   const hasEditRights = await services.hasEditRights(req.userId, req.taskId);

@@ -1,11 +1,11 @@
 import { ApiError } from "@repo/utils";
 import { prisma } from "@repo/db";
 import bcrypt from "bcrypt";
-import { UserLogin, UserSignup } from "./auth.schema.js";
+import type { UserLogin, UserSignup } from "@repo/types";
 import { jwtVerify, SignJWT, base64url } from "jose";
 import CONFIG from "../lib/config.js";
 import { randomUUID } from "node:crypto";
-import type { RefreshToken } from "../../generated/prisma/client.js";
+import type { RefreshToken } from "@repo/db";
 import { JWTExpired, JWTInvalid } from "jose/errors";
 
 interface MyTokenPayload {

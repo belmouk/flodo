@@ -1,4 +1,4 @@
-import type { LoaderData } from "@/routes";
+import type { User } from "@repo/db";
 import { Outlet, useOutletContext, Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
@@ -10,7 +10,7 @@ import WorkspaceUpdate from "@/components/workspaces/workspaceUpdate";
 
 function Workspaces() {
   const { workspaceId } = useParams();
-  const user = useOutletContext<LoaderData>();
+  const user = useOutletContext<Omit<User, "password">>();
   const { isPending, isError, error, data } = useQuery({
     queryKey: ["workspaces"],
     queryFn: async () => {

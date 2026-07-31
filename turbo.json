@@ -1,10 +1,10 @@
 {
-  "$schema": "https://turborepo.dev/schema.json",
+  "$schema": "https://turborepo.dev",
   "globalEnv": ["DATABASE_URL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "^db:generate"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".vite/**"]
     },
     "dev": {
       "dependsOn": ["^db:generate"],
@@ -19,6 +19,31 @@
     },
     "db:deploy": {
       "cache": false
+    },
+    "test": {
+      "dependsOn": ["^db:deploy"]
+    },
+    "test:watch": {
+      "cache": false
+    },
+    "lint": {
+      "outputs": []
+    },
+    "lint:fix": {
+      "cache": false,
+      "outputs": []
+    },
+    "format": {
+      "cache": false,
+      "outputs": []
+    },
+    "format:check": {
+      "outputs": []
+    },
+    "preview": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
     }
   }
 }

@@ -7,11 +7,11 @@ import {
   createAccessToken,
 } from "../auth/auth.services.js";
 
-import type { User } from "../users/users.schema.js";
-import type { Workspace } from "../../generated/prisma/client.js";
+import type { User } from "@repo/db";
+import type { Workspace } from "@repo/db";
 import { describe, it, expect, beforeEach } from "vitest";
 
-const getAuthCookies = async (user: User) => {
+const getAuthCookies = async (user: Omit<User, "password">) => {
   const [accessToken, refreshToken] = await Promise.all([
     createAccessToken(user.id),
     createRefreshToken(user.id),

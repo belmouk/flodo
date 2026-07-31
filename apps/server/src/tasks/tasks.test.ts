@@ -6,10 +6,10 @@ import {
   createRefreshToken,
   createAccessToken,
 } from "../auth/auth.services.js";
-import { User } from "../users/users.schema.js";
+import type { User } from "@repo/db";
 import { it, expect, beforeEach } from "vitest";
 
-const getAuthCookies = async (user: User) => {
+const getAuthCookies = async (user: Omit<User, "password">) => {
   const [accessToken, refreshToken] = await Promise.all([
     createAccessToken(user.id),
     createRefreshToken(user.id),

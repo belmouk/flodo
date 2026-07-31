@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import * as services from "./projects.services.js";
 import { ApiError } from "@repo/utils";
-import z from "zod";
+import * as z from "zod";
+import { ProjectSchema } from "@repo/types";
 
 export const index = async (req: Request, res: Response) => {
   const projects = await services.getAll(req.workspaceId);
@@ -88,13 +89,7 @@ export const validateProjectInput = (
   res: Response,
   next: NextFunction
 ) => {
-  const schema = z.object({
-    name: z
-      .string()
-      .min(1, "Project name is required")
-      .max(150, "Project name is too long"),
-  });
-  const result = schema.safeParse(req.body);
+  const result = ProjectSchema.safeParse(req.body);
   if (!result.success) {
     const errors = z.flattenError(result.error).fieldErrors;
     throw new ApiError("Invalid project data", 400, "InvalidDataError", errors);

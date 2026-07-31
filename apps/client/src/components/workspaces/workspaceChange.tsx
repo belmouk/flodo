@@ -27,6 +27,7 @@ import type { Workspace } from "@repo/db";
 import { SquarePen, FolderPlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
+import { WorkspaceSchema } from "@repo/types";
 
 type WorkspaceChangeProps =
   | {
@@ -37,13 +38,6 @@ type WorkspaceChangeProps =
       HTTPMethod: "PUT";
       workspaceId: number;
     };
-
-const schema = z.object({
-  name: z
-    .string()
-    .min(1, "Workspace name is required")
-    .max(150, "Workspace name is too long"),
-});
 
 type FormErrors = Record<string, string[] | undefined>;
 
@@ -78,7 +72,7 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const result = schema.safeParse(input);
+    const result = WorkspaceSchema.safeParse(input);
     if (!result.success) {
       const errors = z.flattenError(result.error).fieldErrors;
       setErrors(errors);

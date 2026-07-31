@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import * as services from "./lists.services.js";
-import z from "zod";
+import * as z from "zod";
 import { ApiError } from "@repo/utils";
+import { ListSchema } from "@repo/types";
 
 export const validateListRoute = async (
   req: Request,
@@ -23,19 +24,7 @@ export const validateListInput = (
   res: Response,
   next: NextFunction
 ) => {
-  const schema = z.object({
-    name: z
-      .string()
-      .min(1, "List name is required")
-      .max(255, "List name too long"),
-    position: z.coerce
-      .number()
-      .int()
-      .positive("List position must be positive integer.")
-      .optional(),
-  });
-
-  const result = schema.safeParse(req.body);
+  const result = ListSchema.safeParse(req.body);
   if (!result.success) {
     const errors = z.flattenError(result.error).fieldErrors;
     throw new ApiError("Invalid project data", 400, "InvalidDataError", errors);

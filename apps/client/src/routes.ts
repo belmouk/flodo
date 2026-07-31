@@ -5,16 +5,14 @@ import Login from "./pages/Login";
 import ErrorBoundary from "./pages/ErrorBoundary";
 import ProtectedLayout from "./pages/ProtectedLayout";
 import { redirect } from "react-router";
-import type { User } from "../../server/src/users/users.schema";
+import type { User } from "@repo/db";
 import Workspaces from "./pages/Workspaces";
 import Workspace from "./pages/Workspace";
 import { fetchApi } from "./lib/utils";
 import Project from "./pages/Project";
 
-export type LoaderData = User;
-
 const publicLoader = async () => {
-  const result = await fetchApi<User>("/auth/me", "GET");
+  const result = await fetchApi<Omit<User, "password">>("/auth/me", "GET");
   if (result.success) throw redirect("/workspaces");
   return null;
 };

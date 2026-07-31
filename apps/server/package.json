@@ -7,11 +7,9 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "check": "npm run lint && npm run build && npm run test",
     "start": "node dist/src/index.js",
-    "test": "vitest run --mode test",
-    "test:watch": "vitest --mode test",
-    "pretest": "dotenv -e .env.test -- prisma migrate deploy",
+    "test": "dotenv -e .env.test -- vitest run --mode test",
+    "test:watch": "dotenv -e .env.test -- vitest --mode test",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier src --write"

@@ -27,6 +27,7 @@ import type { Project } from "@repo/db";
 import { SquarePen, FilePlusCorner } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
+import { ProjectSchema } from "@repo/types";
 
 type FormErrors = Record<string, string[] | undefined>;
 
@@ -41,13 +42,6 @@ type ProjectChangeProps =
       projectId?: undefined;
       workspaceId: number;
     };
-
-const schema = z.object({
-  name: z
-    .string()
-    .min(1, "Project name is required")
-    .max(150, "Project name is too long"),
-});
 
 function ProjectChange({
   HTTPMethod,
@@ -87,7 +81,7 @@ function ProjectChange({
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const result = schema.safeParse(input);
+    const result = ProjectSchema.safeParse(input);
     if (!result.success) {
       const errors = z.flattenError(result.error).fieldErrors;
       setErrors(errors);

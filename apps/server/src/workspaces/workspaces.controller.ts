@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import * as services from "./workspaces.services.js";
 import { ApiError } from "@repo/utils";
 import * as z from "zod";
+import { WorkspaceSchema } from "@repo/types";
 
 export const index = async (req: Request, res: Response) => {
   const workspaces = await services.getWorkSpaces(req.userId);
@@ -90,13 +91,7 @@ export const validateWorkspaceInput = (
   res: Response,
   next: NextFunction
 ) => {
-  const schema = z.object({
-    name: z
-      .string()
-      .min(1, "Workspace name is required")
-      .max(150, "Workspace name is too long"),
-  });
-  const result = schema.safeParse(req.body);
+  const result = WorkspaceSchema.safeParse(req.body);
   if (!result.success) {
     const errors = z.flattenError(result.error).fieldErrors;
 

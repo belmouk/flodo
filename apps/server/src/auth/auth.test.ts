@@ -3,7 +3,7 @@ import app from "../app.js";
 import { prisma } from "@repo/db";
 import { createUser } from "./auth.services.js";
 import { CookieAccessInfo } from "cookiejar";
-import { User, Workspace } from "../../generated/prisma/client.js";
+import type { User, Workspace } from "@repo/db";
 import { describe, it, expect, beforeEach } from "vitest";
 
 beforeEach(async () => {

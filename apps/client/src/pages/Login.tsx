@@ -14,20 +14,9 @@ import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import type { ApiError } from "@repo/utils";
+import { UserLoginSchema } from "@repo/types";
 
 type FormErrors = Record<string, string[] | undefined>;
-
-const schema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .pipe(z.email("A valid email address is required")),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters long")
-    .max(50, "Password too long"),
-});
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -61,7 +50,7 @@ function Login() {
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
-    const result = schema.safeParse(input);
+    const result = UserLoginSchema.safeParse(input);
     if (!result.success) {
       const validationErrors = z.flattenError(result.error).fieldErrors;
       setErrors(validationErrors);

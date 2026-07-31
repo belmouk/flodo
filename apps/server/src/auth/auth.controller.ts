@@ -1,9 +1,11 @@
 import * as services from "./auth.services.js";
-import { Request, Response } from "express";
-import { UserLogin, UserSignup } from "./auth.schema.js";
+import type { Request, Response, NextFunction } from "express";
+import type { UserLogin, UserSignup } from "@repo/types";
 import CONFIG from "../lib/config.js";
 import { ApiError } from "@repo/utils";
 import { getById } from "../users/users.services.js";
+import { UserLoginSchema, UserSignupSchema } from "@repo/types";
+import * as z from "zod";
 
 export const signup = async (
   req: Request<unknown, unknown, UserSignup>,
@@ -137,4 +139,34 @@ export const me = async (req: Request, res: Response) => {
     throw new ApiError("Invalid access token", 401, "InvalidAccessToken");
   }
   return res.json(user);
+};
+
+export const validateUserSignup = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const result = UserSignupSchema.safeParse(req.body);
+  if (result.success) {
+    req.body = result.data;
+    return next();
+  } else if (!result.success) {
+    const errors = z.flattenError(result.error).fieldErrors;
+    throw new ApiError("Invalid SignUp data.", 400, "InvalidDataError", errors);
+  }
+};
+
+export const validateUserLogin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const result = UserLoginSchema.safeParse(req.body);
+  if (result.success) {
+    req.body = result.data;
+    return next();
+  } else {
+    const errors = z.flattenError(result.error).fieldErrors;
+    throw new ApiError("Invalid Login data.", 400, "LoginError", errors);
+  }
 };

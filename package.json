@@ -16,7 +16,18 @@
   "main": "index.js",
   "scripts": {
     "dev": "DO_NOT_TRACK=1 turbo run dev",
-    "build": "DO_NOT_TRACK=1 turbo run build"
+    "build": "DO_NOT_TRACK=1 turbo run build",
+    "check": "DO_NOT_TRACK=1 turbo run lint build test",
+    "test": "DO_NOT_TRACK=1 turbo run test",
+    "lint": "DO_NOT_TRACK=1 turbo run lint",
+    "format": "DO_NOT_TRACK=1 turbo run format",
+    "format:check": "DO_NOT_TRACK=1 turbo run format:check",
+    "dev:server": "DO_NOT_TRACK=1 turbo run dev --filter=server",
+    "dev:client": "DO_NOT_TRACK=1 turbo run dev --filter=client",
+    "preview:client": "DO_NOT_TRACK=1 turbo run preview --filter=client",
+    "db:generate": "DO_NOT_TRACK=1 turbo run db:generate",
+    "db:migrate": "DO_NOT_TRACK=1 turbo run db:migrate --filter=db",
+    "db:deploy": "DO_NOT_TRACK=1 turbo run db:deploy --filter=db"
   },
   "repository": {
     "type": "git",

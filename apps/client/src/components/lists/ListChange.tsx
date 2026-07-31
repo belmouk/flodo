@@ -28,6 +28,7 @@ import { SquarePen, CirclePlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
 import type { ProjectWithLists } from "@/pages/Project";
+import { ListSchema } from "@repo/types";
 
 type ListChangeProps =
   | {
@@ -42,13 +43,6 @@ type ListChangeProps =
       projectId: number;
       listId: number;
     };
-
-const schema = z.object({
-  name: z
-    .string()
-    .min(1, "List name is required")
-    .max(150, "List name is too long"),
-});
 
 type FormErrors = Record<string, string[] | undefined>;
 
@@ -89,7 +83,7 @@ function ListChange({
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const result = schema.safeParse(input);
+    const result = ListSchema.safeParse(input);
     if (!result.success) {
       const errors = z.flattenError(result.error).fieldErrors;
       setErrors(errors);

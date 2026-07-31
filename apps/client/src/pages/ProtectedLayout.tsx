@@ -1,12 +1,12 @@
 import { Outlet, Link, useNavigate } from "react-router";
 import { useLoaderData } from "react-router";
-import type { LoaderData } from "@/routes";
+import type { User } from "@repo/db";
 import { useState } from "react";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 function ProtectedLayout() {
-  const user = useLoaderData<LoaderData>();
+  const user = useLoaderData<Omit<User, "password">>();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 

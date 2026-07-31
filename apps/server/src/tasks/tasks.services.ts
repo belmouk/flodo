@@ -1,7 +1,6 @@
 import { ApiError } from "@repo/utils";
 import { prisma } from "@repo/db";
-import type { TaskStatus } from "../../generated/prisma/enums.js";
-import type { Location } from "./tasks.controller.js";
+import type { TaskUpdateInput, TaskCreationInput } from "@repo/types";
 
 export const getAll = async (listId: number) => {
   return await prisma.task.findMany({
@@ -18,19 +17,12 @@ export const getById = async (taskId: number) => {
 
 export const create = async ({
   listId,
+  assignerId,
   description,
   title,
   dueAt,
-  assignerId,
   assigneeId,
-}: {
-  listId: number;
-  description: string | null;
-  title: string;
-  dueAt: Date;
-  assignerId: number;
-  assigneeId: number;
-}) => {
+}: TaskCreationInput & { listId: number; assignerId: number }) => {
   const task = await prisma.task.aggregate({
     _max: { position: true },
     where: { listId },
@@ -42,11 +34,12 @@ export const create = async ({
         ? task._max.position + 1000
         : 1000 * (Math.floor(task._max.position / 1000) + 1);
   }
+
   return await prisma.task.create({
     data: {
       listId,
-      description,
       title,
+      description: description || null,
       dueAt,
       assigneeId,
       assignerId,
@@ -55,18 +48,7 @@ export const create = async ({
   });
 };
 
-type UpdateInput = {
-  id: number;
-  title?: string;
-  description?: string | null;
-  dueAt?: Date;
-  status?: TaskStatus;
-  assigneeId?: number;
-  listId?: number;
-  location?: Location;
-};
-
-export const update = async (input: UpdateInput) => {
+export const update = async (input: TaskUpdateInput & { id: number }) => {
   const cleanInput: Record<string, unknown> = {};
   const ignoredFields = new Set(["id", "location"]);
   for (const [key, value] of Object.entries(input)) {

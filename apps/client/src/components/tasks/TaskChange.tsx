@@ -28,7 +28,9 @@ import { SquarePen, CirclePlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
 import type { ProjectWithLists } from "@/pages/Project";
-import type { LoaderData } from "@/routes";
+import type { User } from "@repo/db";
+import { TaskUpdateSchema } from "@repo/types";
+import type { TaskUpdateInput } from "@repo/types";
 
 type TaskChangeProps =
   | {
@@ -46,36 +48,6 @@ type TaskChangeProps =
       taskId: number;
     };
 
-const schema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Specify the task")
-    .max(255, "Task title is too long")
-    .optional(),
-  description: z
-    .string()
-    .trim()
-    .max(5000, "Description content is too long")
-    .optional(),
-  dueAt: z.coerce.date("Due date should be of type date").optional(),
-  assigneeId: z.coerce
-    .number()
-    .int()
-    .positive("AssigneeId must be a positive integer")
-    .optional(),
-  status: z
-    .literal(["WIP", "DONE", "OVERDUE"], "Task status not found")
-    .optional(),
-  listId: z.coerce
-    .number()
-    .int()
-    .positive("listId must be a positive integer")
-    .optional(),
-});
-
-type Body = z.infer<typeof schema>;
-
 type FormErrors = Record<string, string[] | undefined>;
 
 type FormInput = {
@@ -92,7 +64,7 @@ function TaskChange({
   projectId,
   taskId,
 }: TaskChangeProps) {
-  const user = useOutletContext<LoaderData>();
+  const user = useOutletContext<Omit<User, "password">>();
   const cleanInput = {
     title: "",
     description: "",
@@ -105,7 +77,7 @@ function TaskChange({
   const [errors, setErrors] = useState<FormErrors>({});
   const [input, setInput] = useState<FormInput>(cleanInput);
   const mutation = useMutation({
-    mutationFn: async (body: Body) => {
+    mutationFn: async (body: TaskUpdateInput) => {
       const url =
         HTTPMethod === "POST"
           ? `/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks`
@@ -130,7 +102,7 @@ function TaskChange({
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const result = schema.safeParse(input);
+    const result = TaskUpdateSchema.safeParse(input);
     if (!result.success) {
       const errors = z.flattenError(result.error).fieldErrors;
       setErrors(errors);

@@ -1,7 +1,12 @@
 import express from "express";
 import authRouter from "./auth/auth.routes.js";
 import { ApiError } from "@repo/utils";
-import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
+import type {
+  Request,
+  Response,
+  NextFunction,
+  ErrorRequestHandler,
+} from "express";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import ensureAuth from "./middleware/ensureAuth.js";

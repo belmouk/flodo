@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { jwtVerify, errors, base64url } from "jose";
 import CONFIG from "../lib/config.js";
 import { ApiError } from "@repo/utils";

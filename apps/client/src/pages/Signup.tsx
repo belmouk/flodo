@@ -15,32 +15,9 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import type { User } from "@repo/db";
 import type { ApiError } from "@repo/utils";
+import { UserSignupSchema } from "@repo/types";
 
 type FormErrors = Record<string, string[] | undefined>;
-
-const schema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .min(1, "First name required")
-    .max(100, "First name too long")
-    .transform((val) => val[0].toUpperCase() + val.slice(1).toLowerCase()),
-  lastName: z
-    .string()
-    .trim()
-    .min(1, "Last name required")
-    .max(100, "Last name too long")
-    .transform((val) => val[0].toUpperCase() + val.slice(1).toLowerCase()),
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .pipe(z.email("A valid email address is required")),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters long")
-    .max(50, "Password too long"),
-});
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -75,7 +52,7 @@ function Signup() {
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
-    const result = schema.safeParse(input);
+    const result = UserSignupSchema.safeParse(input);
     if (!result.success) {
       const validationErrors = z.flattenError(result.error).fieldErrors;
       setErrors(validationErrors);
