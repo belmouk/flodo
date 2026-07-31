@@ -365,7 +365,7 @@ export type TaskCreateInput = {
   dueAt: Date | string
   createdAt?: Date | string
   completedAt?: Date | string | null
-  position?: number
+  position: number
   assigner: Prisma.UserCreateNestedOneWithoutTasksToReviewInput
   assignee: Prisma.UserCreateNestedOneWithoutTasksToDoInput
   list: Prisma.ListCreateNestedOneWithoutTasksInput
@@ -382,7 +382,7 @@ export type TaskUncheckedCreateInput = {
   assignerId: number
   assigneeId: number
   listId: number
-  position?: number
+  position: number
 }
 
 export type TaskUpdateInput = {
@@ -423,7 +423,7 @@ export type TaskCreateManyInput = {
   assignerId: number
   assigneeId: number
   listId: number
-  position?: number
+  position: number
 }
 
 export type TaskUpdateManyMutationInput = {
@@ -663,7 +663,7 @@ export type TaskCreateWithoutAssigneeInput = {
   dueAt: Date | string
   createdAt?: Date | string
   completedAt?: Date | string | null
-  position?: number
+  position: number
   assigner: Prisma.UserCreateNestedOneWithoutTasksToReviewInput
   list: Prisma.ListCreateNestedOneWithoutTasksInput
 }
@@ -678,7 +678,7 @@ export type TaskUncheckedCreateWithoutAssigneeInput = {
   completedAt?: Date | string | null
   assignerId: number
   listId: number
-  position?: number
+  position: number
 }
 
 export type TaskCreateOrConnectWithoutAssigneeInput = {
@@ -698,7 +698,7 @@ export type TaskCreateWithoutAssignerInput = {
   dueAt: Date | string
   createdAt?: Date | string
   completedAt?: Date | string | null
-  position?: number
+  position: number
   assignee: Prisma.UserCreateNestedOneWithoutTasksToDoInput
   list: Prisma.ListCreateNestedOneWithoutTasksInput
 }
@@ -713,7 +713,7 @@ export type TaskUncheckedCreateWithoutAssignerInput = {
   completedAt?: Date | string | null
   assigneeId: number
   listId: number
-  position?: number
+  position: number
 }
 
 export type TaskCreateOrConnectWithoutAssignerInput = {
@@ -782,7 +782,7 @@ export type TaskCreateWithoutListInput = {
   dueAt: Date | string
   createdAt?: Date | string
   completedAt?: Date | string | null
-  position?: number
+  position: number
   assigner: Prisma.UserCreateNestedOneWithoutTasksToReviewInput
   assignee: Prisma.UserCreateNestedOneWithoutTasksToDoInput
 }
@@ -797,7 +797,7 @@ export type TaskUncheckedCreateWithoutListInput = {
   completedAt?: Date | string | null
   assignerId: number
   assigneeId: number
-  position?: number
+  position: number
 }
 
 export type TaskCreateOrConnectWithoutListInput = {
@@ -836,7 +836,7 @@ export type TaskCreateManyAssigneeInput = {
   completedAt?: Date | string | null
   assignerId: number
   listId: number
-  position?: number
+  position: number
 }
 
 export type TaskCreateManyAssignerInput = {
@@ -849,7 +849,7 @@ export type TaskCreateManyAssignerInput = {
   completedAt?: Date | string | null
   assigneeId: number
   listId: number
-  position?: number
+  position: number
 }
 
 export type TaskUpdateWithoutAssigneeInput = {
@@ -938,7 +938,7 @@ export type TaskCreateManyListInput = {
   completedAt?: Date | string | null
   assignerId: number
   assigneeId: number
-  position?: number
+  position: number
 }
 
 export type TaskUpdateWithoutListInput = {

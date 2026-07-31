@@ -94,7 +94,6 @@ export const refresh = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
-  console.log(req.cookies);
   const refreshToken = req.cookies?.refreshToken as string | undefined;
   if (refreshToken) {
     await services.deleteRefreshToken(refreshToken);
