@@ -49,14 +49,15 @@ export const create = async ({
 };
 
 export const update = async (input: TaskUpdateInput & { id: number }) => {
+  const { id, location, status, ...rest } = input;
+
   const cleanInput: Record<string, unknown> = {};
-  const ignoredFields = new Set(["id", "location"]);
-  for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined && value !== null && !ignoredFields.has(key)) {
-      cleanInput[key] = value;
-      if (key === "status")
-        cleanInput["completedAt"] = value === "DONE" ? new Date() : null;
-    }
+  for (const [key, value] of Object.entries(rest)) {
+    if (value !== undefined) cleanInput[key] = value;
+  }
+  if (status !== undefined) {
+    cleanInput.status = status;
+    cleanInput.completedAt = status === "DONE" ? new Date() : null;
   }
 
   const INTERVAL_LIMIT = 10;
@@ -231,18 +232,18 @@ export const userHasAccess = async (taskId: number, userId: number) => {
 };
 
 export const isValidEdit = async (newListId: number, taskId: number) => {
-  const newListPromise = prisma.list.findUnique({
+  const targetListPromise = prisma.list.findUnique({
     where: { id: newListId },
     select: { projectId: true },
   });
-  const originalListPromise = prisma.task.findUnique({
+  const currentListPromise = prisma.task.findUnique({
     where: { id: taskId },
     select: { list: { select: { projectId: true } } },
   });
-  const [newList, originalList] = await Promise.all([
-    newListPromise,
-    originalListPromise,
+  const [targetList, currentList] = await Promise.all([
+    targetListPromise,
+    currentListPromise,
   ]);
-  if (!newList || !originalList) return false;
-  return newList.projectId === originalList.list.projectId;
+  if (!targetList || !currentList) return false;
+  return targetList.projectId === currentList.list.projectId;
 };
