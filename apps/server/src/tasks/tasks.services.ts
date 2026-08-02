@@ -54,9 +54,9 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
   for (const [key, value] of Object.entries(input)) {
     if (value !== undefined && value !== null && !ignoredFields.has(key)) {
       cleanInput[key] = value;
+      if (key === "status")
+        cleanInput["completedAt"] = value === "DONE" ? new Date() : null;
     }
-    if (key === "status")
-      cleanInput["completedAt"] = value === "DONE" ? new Date() : null;
   }
 
   const INTERVAL_LIMIT = 10;
