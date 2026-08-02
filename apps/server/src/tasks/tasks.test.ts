@@ -90,6 +90,7 @@ it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", as
         dueAt: new Date(Date.now()),
         assignerId: admin.id,
         assigneeId: member.id,
+        position: 1000,
       },
       {
         listId: list.id,
@@ -97,6 +98,7 @@ it("GET api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", as
         dueAt: new Date(Date.now()),
         assignerId: member.id,
         assigneeId: admin.id,
+        position: 2000,
       },
     ],
     omit: { createdAt: true, dueAt: true },
@@ -122,6 +124,7 @@ it("GET api/tasks/:taskId", async () => {
       dueAt: new Date(Date.now()),
       assignerId: admin.id,
       assigneeId: member.id,
+      position: 5000,
     },
     omit: { createdAt: true, dueAt: true },
   });
@@ -166,6 +169,7 @@ it("PATCH api/tasks/:taskId", async () => {
       dueAt: new Date(Date.now()),
       assignerId: admin.id,
       assigneeId: member.id,
+      position: 7000,
     },
     omit: { createdAt: true, dueAt: true },
   });
@@ -193,6 +197,7 @@ it("DELETE api/tasks/:taskId", async () => {
       dueAt: new Date(Date.now()),
       assignerId: admin.id,
       assigneeId: member.id,
+      position: 500,
     },
     select: { id: true },
   });

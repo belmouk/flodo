@@ -8,13 +8,7 @@ export const getById = async (listId: number) => {
   return await prisma.list.findUnique({ where: { id: listId } });
 };
 
-export const update = async (id: number, name: string, position?: number) => {
-  if (position) {
-    return await prisma.list.update({
-      where: { id },
-      data: { name, position },
-    });
-  }
+export const update = async (id: number, name: string) => {
   return await prisma.list.update({ where: { id }, data: { name } });
 };
 

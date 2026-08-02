@@ -3,7 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { UserLogin, UserSignup } from "@repo/types";
 import CONFIG from "../lib/config.js";
 import { ApiError } from "@repo/utils";
-import { getById } from "../users/users.services.js";
+import { getUserById } from "../users/users.services.js";
 import { UserLoginSchema, UserSignupSchema } from "@repo/types";
 import * as z from "zod";
 
@@ -59,7 +59,7 @@ export const refresh = async (req: Request, res: Response) => {
 
   const validatedRefreshToken = result.data;
 
-  const user = await getById(validatedRefreshToken.userId);
+  const user = await getUserById(validatedRefreshToken.userId);
   if (!user) {
     await services.deleteRefreshToken(token).catch(() => {});
     res.clearCookie("refreshToken", getCookieOptions());

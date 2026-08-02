@@ -57,11 +57,7 @@ export const update = async (
   req: Request<unknown, unknown, { name: string; position: number }>,
   res: Response
 ) => {
-  const updatedList = await services.update(
-    req.listId,
-    req.body.name,
-    req.body.position
-  );
+  const updatedList = await services.update(req.listId, req.body.name);
   return res.json(updatedList);
 };
 

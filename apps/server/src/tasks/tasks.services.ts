@@ -229,3 +229,20 @@ export const userHasAccess = async (taskId: number, userId: number) => {
   });
   return count > 0;
 };
+
+export const isValidEdit = async (newListId: number, taskId: number) => {
+  const newListPromise = prisma.list.findUnique({
+    where: { id: newListId },
+    select: { projectId: true },
+  });
+  const originalListPromise = prisma.task.findUnique({
+    where: { id: taskId },
+    select: { list: { select: { projectId: true } } },
+  });
+  const [newList, originalList] = await Promise.all([
+    newListPromise,
+    originalListPromise,
+  ]);
+  if (!newList || !originalList) return false;
+  return newList.projectId === originalList.list.projectId;
+};

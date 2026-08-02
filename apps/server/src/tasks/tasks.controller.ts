@@ -90,7 +90,12 @@ export const update = async (
   res: Response
 ) => {
   const hasEditRights = await services.hasEditRights(req.userId, req.taskId);
-  if (!hasEditRights) {
+
+  const isValidEdit = req.body.listId
+    ? await services.isValidEdit(req.body.listId, req.taskId)
+    : true;
+
+  if (!hasEditRights && !isValidEdit) {
     throw new ApiError("unauthorized action", 403, "UnAuthorizedAction");
   }
 
