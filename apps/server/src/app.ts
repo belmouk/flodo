@@ -1,12 +1,7 @@
 import express from "express";
 import authRouter from "./auth/auth.routes.js";
 import { ApiError } from "@repo/utils";
-import type {
-  Request,
-  Response,
-  NextFunction,
-  ErrorRequestHandler,
-} from "express";
+import type { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import ensureAuth from "./middleware/ensureAuth.js";
@@ -40,47 +35,40 @@ app.use((req: Request, res: Response) =>
   })
 );
 
-app.use(
-  (
-    err: ErrorRequestHandler,
-    req: Request,
-    res: Response,
-    _next: NextFunction
-  ) => {
-    if (err instanceof ApiError) {
-      type WarnJSONType = {
-        status: number;
-        code: string;
-        details?: Record<string, string[] | undefined>;
-      };
-      const warnJSON: WarnJSONType = { status: err.status, code: err.code };
-      if (err.details && Object.keys(err.details).length > 0) {
-        warnJSON["details"] = err.details;
-      }
-      req.log.warn(warnJSON, err.message);
-      return res.status(err.status).send({
-        message: err.message,
-        details: err.details,
-        code: err.code,
-        status: err.status,
-      });
-    } else {
-      req.log.error(
-        {
-          err,
-          path: req.originalUrl,
-          method: req.method,
-        },
-        "Unhandled application error"
-      );
-      return res.status(500).send({
-        message: "Oops something went wrong.",
-        details: {},
-        code: "InternalServerError",
-        status: 500,
-      });
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof ApiError) {
+    type WarnJSONType = {
+      status: number;
+      code: string;
+      details?: Record<string, string[] | undefined>;
+    };
+    const warnJSON: WarnJSONType = { status: err.status, code: err.code };
+    if (err.details && Object.keys(err.details).length > 0) {
+      warnJSON["details"] = err.details;
     }
+    req.log.warn(warnJSON, err.message);
+    return res.status(err.status).send({
+      message: err.message,
+      details: err.details,
+      code: err.code,
+      status: err.status,
+    });
+  } else {
+    req.log.error(
+      {
+        err,
+        path: req.originalUrl,
+        method: req.method,
+      },
+      "Unhandled application error"
+    );
+    return res.status(500).send({
+      message: "Oops something went wrong.",
+      details: {},
+      code: "InternalServerError",
+      status: 500,
+    });
   }
-);
+});
 
 export default app;
