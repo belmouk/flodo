@@ -5,30 +5,31 @@ import type { User } from "@repo/db";
 import { CirclePlus, SquarePen } from "lucide-react";
 
 type TaskCreateProps = {
-  workspaceId: number;
-  projectId: number;
-  listId: number;
+  workspaceId: string;
+  projectId: string;
+  listId: string;
 };
 
 function TaskCreate({ workspaceId, projectId, listId }: TaskCreateProps) {
   const user = useOutletContext<Omit<User, "password">>();
+  const cleanInput = {
+    title: "",
+    description: "",
+    dueAt: "",
+    assigneeId: String(user.id),
+  };
   return (
-    <ResourceChange
+    <ResourceChange<typeof cleanInput>
       HTTPRequest={{
         method: "POST",
         url: `/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks`,
       }}
       schema={TaskCreationSchema}
-      cleanInput={{
-        title: "",
-        description: "",
-        dueAt: "",
-        assigneeId: user.id,
-      }}
+      cleanInput={cleanInput}
       queryKeysToInvalidate={["lists", projectId]}
       fields={[
-        { label: "title", type: "string" },
-        { label: "description", type: "string" },
+        { label: "title", type: "text" },
+        { label: "description", type: "text" },
         { label: "dueAt", type: "date" },
       ]}
       resource="task"

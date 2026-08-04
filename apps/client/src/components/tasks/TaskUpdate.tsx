@@ -5,33 +5,33 @@ import type { User } from "@repo/db";
 import { CirclePlus, SquarePen } from "lucide-react";
 
 interface TaskUpdateProps {
-  workspaceId: number;
-  projectId: number;
-  listId: number;
-  taskId: number;
+  projectId: string;
+  listId: string;
+  taskId: string;
 }
 
 function TaskUpdate({ taskId, projectId, listId }: TaskUpdateProps) {
   const user = useOutletContext<Omit<User, "password">>();
+  const cleanInput = {
+    title: "",
+    description: "",
+    dueAt: "",
+    assigneeId: String(user.id),
+  };
   return (
-    <ResourceChange
+    <ResourceChange<typeof cleanInput>
       HTTPRequest={{
         method: "PATCH",
         url: `/tasks/${taskId}`,
-        itemId: taskId,
-        parentId: listId,
+        itemId: Number(taskId),
+        parentId: Number(listId),
       }}
       schema={TaskUpdateSchema}
-      cleanInput={{
-        title: "",
-        description: "",
-        dueAt: "",
-        assigneeId: user.id,
-      }}
+      cleanInput={cleanInput}
       queryKeysToInvalidate={["lists", projectId]}
       fields={[
-        { label: "title", type: "string" },
-        { label: "description", type: "string" },
+        { label: "title", type: "text" },
+        { label: "description", type: "text" },
         { label: "dueAt", type: "date" },
       ]}
       resource="task"

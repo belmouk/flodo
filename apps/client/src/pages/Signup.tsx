@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   Field,
   FieldDescription,
@@ -45,8 +46,11 @@ function Signup() {
       return navigate("/login");
     },
     onError: (error: ApiError) => {
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      setErrors(error.details);
+      if (error.status === 400) {
+        setErrors(error.details);
+      } else {
+        toast.error(error.message);
+      }
     },
   });
 

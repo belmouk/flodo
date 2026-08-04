@@ -3,8 +3,8 @@ import { SquareArrowOutUpRight } from "lucide-react";
 import { Link } from "react-router";
 
 type ProjectOpenProps = {
-  projectId: number;
-  workspaceId: number;
+  projectId: string;
+  workspaceId: string;
 };
 
 function ProjectOpen({ projectId, workspaceId }: ProjectOpenProps) {

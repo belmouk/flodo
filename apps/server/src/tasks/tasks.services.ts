@@ -62,8 +62,8 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
 
   const INTERVAL_LIMIT = 10;
   const POSITION_INCREMENT = 1000;
-  if (input.location && input.listId) {
-    const { location, listId, id } = input;
+  if (location && input.listId) {
+    const { listId, id } = input;
     const neighborBefore = location.before
       ? await getById(location.before)
       : null;
@@ -201,7 +201,7 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
     }
   }
   return await prisma.task.update({
-    where: { id: input.id },
+    where: { id },
     data: cleanInput,
   });
 };

@@ -33,22 +33,16 @@ function Workspace() {
         <ControlPanel>
           {selected ? (
             <>
-              <ProjectOpen
-                projectId={selected}
-                workspaceId={Number(workspaceId)}
-              />
-              <ProjectUpdate
-                projectId={selected}
-                workspaceId={Number(workspaceId)}
-              />
+              <ProjectOpen projectId={selected} workspaceId={workspaceId} />
+              <ProjectUpdate projectId={selected} workspaceId={workspaceId} />
               <ProjectDelete
-                setProjectId={setSelected}
+                setProjectId={setSelected.toString()}
                 projectId={selected}
-                workspaceId={Number(workspaceId)}
+                workspaceId={workspaceId}
               />
             </>
           ) : null}
-          <ProjectCreate workspaceId={Number(workspaceId)} />
+          <ProjectCreate workspaceId={workspaceId} />
         </ControlPanel>
       </div>
       {data.length === 0 ? (

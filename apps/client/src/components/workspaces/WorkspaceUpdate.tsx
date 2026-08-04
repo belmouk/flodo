@@ -3,21 +3,22 @@ import { WorkspaceSchema } from "@repo/types";
 import { FolderPlus, SquarePen } from "lucide-react";
 
 interface WorkspaceUpdateProps {
-  workspaceId: number;
+  workspaceId: string;
 }
 
 function WorkspaceUpdate({ workspaceId }: WorkspaceUpdateProps) {
+  const cleanInput = { name: "" };
   return (
-    <ResourceChange
+    <ResourceChange<typeof cleanInput>
       HTTPRequest={{
         method: "PUT",
         url: `/workspaces/${workspaceId}`,
-        itemId: workspaceId,
+        itemId: Number(workspaceId),
       }}
       schema={WorkspaceSchema}
-      cleanInput={{ name: "" }}
+      cleanInput={cleanInput}
       queryKeysToInvalidate={["workspaces"]}
-      fields={[{ label: "name", type: "string" }]}
+      fields={[{ label: "name", type: "text" }]}
       CreateIcon={<FolderPlus className="size-6" />}
       UpdateIcon={<SquarePen className="size-6" />}
       resource="workspace"

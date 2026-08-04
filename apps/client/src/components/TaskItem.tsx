@@ -6,9 +6,9 @@ import { useSortable } from "@dnd-kit/react/sortable";
 
 type TaskItemProps = {
   task: Task;
-  workspaceId: number;
-  projectId: number;
-  listId: number;
+  workspaceId: string;
+  projectId: string;
+  listId: string;
   index: number;
   id: string;
   column: string;
@@ -16,7 +16,6 @@ type TaskItemProps = {
 
 function TaskItem({
   task,
-  workspaceId,
   projectId,
   listId,
   index,
@@ -45,12 +44,11 @@ function TaskItem({
       <div className="shrink-0">
         <ControlPanel>
           <TaskUpdate
-            workspaceId={workspaceId}
             listId={listId}
             projectId={projectId}
-            taskId={task.id}
+            taskId={task.id.toString()}
           />
-          <TaskDelete projectId={projectId} taskId={task.id} />
+          <TaskDelete projectId={projectId} taskId={task.id.toString()} />
         </ControlPanel>
       </div>
     </li>

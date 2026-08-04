@@ -6,10 +6,11 @@ import type React from "react";
 import { Trash2 } from "lucide-react";
 import { TooltipTrigger, Tooltip, TooltipContent } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
+import { toast } from "sonner";
 
 type ProjectDeleteProps = {
-  projectId: number;
-  workspaceId: number;
+  projectId: string;
+  workspaceId: string;
   setProjectId: React.Dispatch<React.SetStateAction<number | undefined>>;
 };
 
@@ -31,13 +32,16 @@ function ProjectDelete({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["workspace", workspaceId.toString()],
+        queryKey: ["workspace", workspaceId],
       });
       setProjectId(undefined);
     },
     onError(error: ApiError) {
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.status === 401) return navigate("/login");
+      if (error.status === 401) {
+        return navigate("/login");
+      } else {
+        toast.error(error.message);
+      }
     },
   });
 

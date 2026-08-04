@@ -7,7 +7,7 @@ import { TooltipTrigger, Tooltip, TooltipContent } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
 
 interface WorkspaceDeleteProps {
-  workspaceId: number;
+  workspaceId: string;
 }
 
 function WorkspaceDelete({ workspaceId }: WorkspaceDeleteProps) {

@@ -25,25 +25,33 @@ import { useState } from "react";
 import * as z from "zod";
 import { TooltipTrigger, TooltipContent, Tooltip } from "./ui/tooltip";
 import type { ApiError } from "@repo/utils";
+import type { Workspace, Project, Task, List } from "@repo/db";
+import type { ProjectWithLists } from "@/pages/Project";
+import { toast } from "sonner";
 
 type HTTPRequestType =
   | { method: "POST"; url: string }
   | { method: "PUT" | "PATCH"; url: string; itemId: number; parentId?: number };
 
-type ResourceChangeProps = {
+type FormValues = Record<string, string>;
+
+type FieldDef<T extends FormValues> = {
+  label: keyof T;
+  type: "number" | "date" | "text";
+};
+
+type ResourceChangeProps<T extends FormValues> = {
   HTTPRequest: HTTPRequestType;
   schema: z.ZodType;
-  cleanInput: Record<string, unknown>;
-  queryKeysToInvalidate: Array<string | number>;
-  fields: Array<{ label: string; type: string }>;
+  cleanInput: T;
+  queryKeysToInvalidate: string[];
+  fields: FieldDef<T>[];
   UpdateIcon: React.ReactNode;
   CreateIcon: React.ReactNode;
   resource: "workspace" | "project" | "list" | "task";
 };
 
-type FormErrors = Record<string, string[] | undefined>;
-
-function ResourceChange({
+function ResourceChange<T extends FormValues>({
   HTTPRequest,
   cleanInput,
   schema,
@@ -52,23 +60,30 @@ function ResourceChange({
   UpdateIcon,
   CreateIcon,
   resource,
-}: ResourceChangeProps) {
+}: ResourceChangeProps<T>) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [input, setInput] = useState(cleanInput);
+  const [errors, setErrors] = useState<Partial<Record<keyof T, string[]>>>({});
+  const [input, setInput] = useState<T>(cleanInput);
   const mutation = useMutation({
-    mutationFn: async (payload: typeof input) => {
-      const res = await fetchApi(HTTPRequest.url, HTTPRequest.method, payload);
+    mutationFn: async (payload: T) => {
+      const res = await fetchApi<T>(
+        HTTPRequest.url,
+        HTTPRequest.method,
+        payload,
+      );
       if (!res.success) throw res.error;
       return res.data;
     },
     onError(error: ApiError) {
-      //replace the throw Response with a toast state
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.status === 401) return navigate("/login");
-      setErrors(error.details);
+      if (error.status === 401) {
+        return navigate("/login");
+      } else if (error.status === 400) {
+        setErrors(error.details as Partial<Record<keyof T, string[]>>);
+      } else {
+        toast.error(error.message);
+      }
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: queryKeysToInvalidate });
@@ -76,10 +91,12 @@ function ResourceChange({
       setErrors({});
       setOpen(false);
       if (resource === "workspace") {
-        await navigate(`/workspaces/${data.id}`);
+        await navigate(`/workspaces/${String(data.id)}`);
       }
     },
   });
+
+  const isEdit = HTTPRequest.method === "PUT" || HTTPRequest.method === "PATCH";
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -94,54 +111,64 @@ function ResourceChange({
   };
 
   const handleChange = (
-    field: keyof typeof input,
+    field: keyof T,
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setInput((prev) => ({ ...prev, [field]: e.target.value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
+  const populateFromCache = (): T | null => {
+    if (!isEdit) return null;
+
+    let cachedItem: Record<string, unknown> | null;
+
+    if (resource === "list") {
+      const cache = queryClient.getQueryData<ProjectWithLists>(
+        queryKeysToInvalidate,
+      );
+      cachedItem =
+        cache?.lists.find((list) => list.id === HTTPRequest.itemId) ?? null;
+    } else if (resource === "task") {
+      const cache = queryClient.getQueryData<ProjectWithLists>(
+        queryKeysToInvalidate,
+      );
+      const parentList = cache?.lists.find(
+        (list) => list.id === HTTPRequest.parentId,
+      );
+      cachedItem =
+        parentList?.tasks.find((task) => task.id === HTTPRequest.itemId) ??
+        null;
+    } else {
+      const cache = queryClient.getQueryData<Workspace[] | Project[]>(
+        queryKeysToInvalidate,
+      );
+      cachedItem =
+        cache?.find((item) => item.id === HTTPRequest.itemId) ?? null;
+    }
+
+    if (!cachedItem) return null;
+
+    const newInput = { ...cleanInput };
+    for (const key of Object.keys(newInput) as (keyof T)[]) {
+      const type = fields.find((f) => f.label === String(key))?.type;
+      const value = String(cachedItem[key as string] ?? "");
+      if (type === "date") {
+        newInput[key] = new Date(value).toISOString() as T[keyof T];
+      } else {
+        newInput[key] = value as T[keyof T];
+      }
+    }
+    return newInput;
+  };
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setErrors({});
       setInput(cleanInput);
-    }
-    if (
-      nextOpen &&
-      (HTTPRequest.method === "PUT" || HTTPRequest.method === "PATCH")
-    ) {
-      const cache = queryClient.getQueryData<Record<string, unknown>[]>(
-        queryKeysToInvalidate,
-      );
-      let cachedResource;
-      if (resource === "list") {
-        cachedResource = cache?.lists.find(
-          (list) => list.id === HTTPRequest.itemId,
-        );
-      } else if (resource === "task") {
-        cachedResource = cache?.lists
-          .find((list) => list.id === HTTPRequest.parentId)
-          .tasks.find((task) => task.id === HTTPRequest.itemId);
-      } else {
-        cachedResource = cache?.find((item) => item.id === HTTPRequest.itemId);
-      }
-      console.log(cache);
-
-      if (cachedResource) {
-        setInput(() => {
-          const newInput = { ...cleanInput };
-          for (const key of Object.keys(newInput)) {
-            if (key === "dueAt") {
-              newInput[key] = new Date(cachedResource[key])
-                .toISOString()
-                .split("T")[0];
-            } else {
-              newInput[key] = cachedResource[key];
-            }
-          }
-          return newInput;
-        });
-      }
+    } else if (isEdit) {
+      const populated = populateFromCache();
+      if (populated) setInput(populated);
     }
     setOpen(nextOpen);
   };
@@ -152,42 +179,42 @@ function ResourceChange({
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button className="hover:cursor-pointer" variant={"ghost"}>
-              {HTTPRequest.method === "PUT" || HTTPRequest.method === "PATCH"
-                ? UpdateIcon
-                : CreateIcon}
+              {isEdit ? UpdateIcon : CreateIcon}
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent>
-          {HTTPRequest.method === "PUT" ? "Edit" : "Add"}
-        </TooltipContent>
+        <TooltipContent>{isEdit ? "Edit" : "Add"}</TooltipContent>
       </Tooltip>
 
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {HTTPRequest.method === "PUT"
-              ? `Edit ${resource}`
-              : "New ${resource}"}
+            {isEdit ? `Edit ${resource}` : `New ${resource}`}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            {HTTPRequest.method === "PUT"
-              ? `Update your ${resource}`
-              : `Create a new ${resource}`}
+            {isEdit ? `Update your ${resource}` : `Create a new ${resource}`}
           </DialogDescription>
         </DialogHeader>
         <form method="POST" onSubmit={handleSubmit}>
           <FieldSet className="mb-4">
             <FieldGroup>
               {fields.map((field) => {
+                const fieldKey = String(field.label);
+                const fieldValue =
+                  field.type === "date"
+                    ? input[fieldKey].split("T")[0]
+                    : String(input[fieldKey] ?? "");
+
                 return (
-                  <Field>
-                    <FieldLabel htmlFor="name">{field.label}</FieldLabel>
+                  <Field key={fieldKey}>
+                    <FieldLabel htmlFor={fieldKey}>
+                      {fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1)}
+                    </FieldLabel>
                     <Input
                       type={field.type}
-                      name={field.label}
-                      id={field.label}
-                      value={input[field.label]}
+                      name={fieldKey}
+                      id={fieldKey}
+                      value={fieldValue}
                       disabled={mutation.isPending}
                       onChange={(e) => {
                         handleChange(field.label, e);

@@ -10,8 +10,8 @@ import TaskItem from "./TaskItem";
 
 type ListItemProps = React.ComponentProps<"div"> & {
   list: List & { tasks: Task[] };
-  workspaceId: number;
-  projectId: number;
+  workspaceId: string;
+  projectId: string;
 };
 
 function ListItem({ workspaceId, projectId, list }: ListItemProps) {
@@ -34,12 +34,8 @@ function ListItem({ workspaceId, projectId, list }: ListItemProps) {
       <div className="flex justify-between items-center mb-4 px-1">
         <h3 className="font-semibold text-gray-700">{list.name}</h3>
         <ControlPanel>
-          <ListUpdate
-            workspaceId={workspaceId}
-            projectId={projectId}
-            listId={list.id}
-          />
-          <ListDelete projectId={projectId} listId={list.id} />
+          <ListUpdate projectId={projectId} listId={list.id.toString()} />
+          <ListDelete projectId={projectId} listId={list.id.toString()} />
         </ControlPanel>
       </div>
 
@@ -50,7 +46,7 @@ function ListItem({ workspaceId, projectId, list }: ListItemProps) {
             task={task}
             workspaceId={workspaceId}
             projectId={projectId}
-            listId={list.id}
+            listId={list.id.toString()}
             index={index}
             id={`task-${task.id}`}
             column={containerId}
@@ -62,7 +58,7 @@ function ListItem({ workspaceId, projectId, list }: ListItemProps) {
         <TaskCreate
           workspaceId={workspaceId}
           projectId={projectId}
-          listId={list.id}
+          listId={list.id.toString()}
         />
       </div>
     </div>
