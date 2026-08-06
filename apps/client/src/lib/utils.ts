@@ -28,9 +28,8 @@ export const fetchApi = async <T>(
     if (res.status === 204) return { success: true, data: undefined as T };
     return { success: true, data: (await res.json()) as T };
   }
-  if (res.status === 400)
+  if (res.status !== 401)
     return { success: false, error: (await res.json()) as ApiError };
-  if (res.status !== 401) throw new Response(null, { status: res.status });
 
   if (retry) {
     return {
