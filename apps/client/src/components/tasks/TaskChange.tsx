@@ -164,11 +164,17 @@ function TaskChange({
     }
     setOpen(nextOpen);
   };
-  const projectMembers = queryClient.getQueryData<ProjectWithListsAndMembers>([
-    "lists",
-    String(projectId),
-  ])?.members;
-  console.log(projectMembers);
+  const projectMembers =
+    queryClient.getQueryData<ProjectWithListsAndMembers>([
+      "lists",
+      String(projectId),
+    ])?.members || [];
+  const items = projectMembers.map((member) => ({
+    label: `${member.user.lastName} ${member.user.firstName}`,
+    value: member.userId,
+  }));
+
+  const defaultItem = items.find((item) => item.value === input.assigneeId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -232,44 +238,6 @@ function TaskChange({
                 )}
               </Field>
               <Field>
-                <FieldLabel htmlFor="description">Description:</FieldLabel>
-                <Input
-                  type="text"
-                  name="description"
-                  id="description"
-                  value={input.description}
-                  disabled={mutation.isPending}
-                  onChange={(e) => {
-                    handleChange("description", e);
-                  }}
-                />
-                {errors.description?.[0] && (
-                  <FieldError>{errors.description[0]}</FieldError>
-                )}
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="assigneeId">Assign To:</FieldLabel>
-                <Combobox
-                  items={projectMembers ?? []}
-                  value={input.assigneeId}
-                  onValueChange={(value) => {
-                    if (value) handleChange("description", value);
-                  }}
-                >
-                  <ComboboxInput placeholder="Select an assignee" />
-                  <ComboboxContent>
-                    <ComboboxEmpty>No items found.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(item) => (
-                        <ComboboxItem key={item.userId} value={item.userId}>
-                          {`${item.user.lastName} ${item.user.firstName}`}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
-              </Field>
-              <Field>
                 <FieldLabel htmlFor="dueAt">Due By:</FieldLabel>
                 <Input
                   type="date"
@@ -284,6 +252,32 @@ function TaskChange({
                 {errors.dueAt?.[0] && (
                   <FieldError>{errors.dueAt[0]}</FieldError>
                 )}
+              </Field>
+              <Field className="">
+                <FieldLabel htmlFor="assigneeId">Assign To:</FieldLabel>
+                <Combobox
+                  items={items}
+                  itemToStringValue={(member: (typeof items)[number]) =>
+                    member.label
+                  }
+                  onValueChange={(item) => {
+                    if (item) handleChange("assigneeId", item.value);
+                    console.log(input);
+                  }}
+                  defaultValue={defaultItem}
+                >
+                  <ComboboxInput placeholder="Select an assignee" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No items found.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(item) => (
+                        <ComboboxItem key={item.value} value={item}>
+                          {item.label}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
               </Field>
             </FieldGroup>
           </FieldSet>
