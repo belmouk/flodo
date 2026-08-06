@@ -28,6 +28,7 @@ import { SquarePen, FolderPlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
 import { WorkspaceSchema } from "@repo/types";
+import { toast } from "sonner";
 
 type WorkspaceChangeProps =
   | {
@@ -47,19 +48,23 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [input, setInput] = useState({ name: "" });
+  const isEdit = HTTPMethod === "PUT";
   const mutation = useMutation({
     mutationFn: async ({ name }: typeof input) => {
-      const url =
-        HTTPMethod === "POST" ? "/workspaces" : `/workspaces/${workspaceId}`;
+      const url = isEdit ? `/workspaces/${workspaceId}` : "/workspaces";
 
       const res = await fetchApi<Workspace>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;
       return res.data;
     },
     onError(error: ApiError) {
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.status === 401) return navigate("/login");
-      setErrors(error.details);
+      if (error.status === 401) {
+        return navigate("/login");
+      } else if (error.status === 400) {
+        setErrors(error.details);
+      } else {
+        toast.error(error.message);
+      }
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
@@ -95,7 +100,7 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
       setErrors({});
       setInput({ name: "" });
     }
-    if (HTTPMethod === "PUT" && nextOpen) {
+    if (isEdit && nextOpen) {
       const workspaces = queryClient.getQueryData<Workspace[]>(["workspaces"]);
       const workspace = workspaces?.find((ws) => ws.id === workspaceId);
       if (workspace) setInput({ name: workspace.name });
@@ -109,7 +114,7 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button className="hover:cursor-pointer" variant={"ghost"}>
-              {HTTPMethod === "PUT" ? (
+              {isEdit ? (
                 <SquarePen className="size-6" />
               ) : (
                 <FolderPlus className="size-6" />
@@ -117,16 +122,16 @@ function WorkspaceChange({ HTTPMethod, workspaceId }: WorkspaceChangeProps) {
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent>{HTTPMethod === "PUT" ? "Edit" : "Add"}</TooltipContent>
+        <TooltipContent>{isEdit ? "Edit" : "Add"}</TooltipContent>
       </Tooltip>
 
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {HTTPMethod === "PUT" ? "Edit Workspace" : "New Workspace"}
+            {isEdit ? "Edit Workspace" : "New Workspace"}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            {HTTPMethod === "PUT"
+            {isEdit
               ? "Update your workspace name and details."
               : "Create a new workspace by entering a name."}
           </DialogDescription>

@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useLoaderData } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
 import type { Project } from "@repo/db";
@@ -8,12 +8,13 @@ import ProjectDelete from "@/components/projects/ProjectDelete";
 import ProjectUpdate from "@/components/projects/ProjectUpdate";
 import { useState } from "react";
 import ProjectOpen from "@/components/projects/ProjectOpen";
+import type { WorkspaceLoader } from "../routes";
 
 function Workspace() {
-  const { workspaceId } = useParams();
+  const { workspaceId } = useLoaderData<typeof WorkspaceLoader>();
   const [selected, setSelected] = useState<number | undefined>();
   const { isPending, isError, error, data } = useQuery({
-    queryKey: ["workspace", workspaceId],
+    queryKey: ["workspace", String(workspaceId)],
     queryFn: async () => {
       const res = await fetchApi<Project[]>(
         `/workspaces/${workspaceId}/projects`,
@@ -33,22 +34,16 @@ function Workspace() {
         <ControlPanel>
           {selected ? (
             <>
-              <ProjectOpen
-                projectId={selected}
-                workspaceId={Number(workspaceId)}
-              />
-              <ProjectUpdate
-                projectId={selected}
-                workspaceId={Number(workspaceId)}
-              />
+              <ProjectOpen projectId={selected} workspaceId={workspaceId} />
+              <ProjectUpdate projectId={selected} workspaceId={workspaceId} />
               <ProjectDelete
                 setProjectId={setSelected}
                 projectId={selected}
-                workspaceId={Number(workspaceId)}
+                workspaceId={workspaceId}
               />
             </>
           ) : null}
-          <ProjectCreate workspaceId={Number(workspaceId)} />
+          <ProjectCreate workspaceId={workspaceId} />
         </ControlPanel>
       </div>
       {data.length === 0 ? (

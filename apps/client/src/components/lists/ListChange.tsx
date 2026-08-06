@@ -29,6 +29,7 @@ import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
 import type { ProjectWithLists } from "@/pages/Project";
 import { ListSchema } from "@repo/types";
+import { toast } from "sonner";
 
 type ListChangeProps =
   | {
@@ -57,24 +58,30 @@ function ListChange({
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [input, setInput] = useState({ name: "" });
+  const isEdit = HTTPMethod === "PUT";
   const mutation = useMutation({
     mutationFn: async ({ name }: typeof input) => {
-      const url =
-        HTTPMethod === "POST"
-          ? `/workspaces/${workspaceId}/projects/${projectId}/lists`
-          : `/lists/${listId}`;
+      const url = isEdit
+        ? `/lists/${listId}`
+        : `/workspaces/${workspaceId}/projects/${projectId}/lists`;
 
       const res = await fetchApi<List>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;
       return res.data;
     },
     onError(error: ApiError) {
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.status === 401) return navigate("/login");
-      setErrors(error.details);
+      if (error.status === 401) {
+        return navigate("/login");
+      } else if (error.status === 400) {
+        setErrors(error.details);
+      } else {
+        toast.error(error.message);
+      }
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["lists", projectId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["lists", String(projectId)],
+      });
       setInput({ name: "" });
       setErrors({});
       setOpen(false);
@@ -106,10 +113,10 @@ function ListChange({
       setErrors({});
       setInput({ name: "" });
     }
-    if (HTTPMethod === "PUT" && nextOpen) {
+    if (isEdit && nextOpen) {
       const project = queryClient.getQueryData<ProjectWithLists>([
         "lists",
-        projectId,
+        String(projectId),
       ]);
       const list = project?.lists.find((ls) => ls.id === listId);
       if (list) setInput({ name: list.name });
@@ -123,7 +130,7 @@ function ListChange({
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button className="hover:cursor-pointer" variant={"ghost"}>
-              {HTTPMethod === "PUT" ? (
+              {isEdit ? (
                 <SquarePen className="size-6" />
               ) : (
                 <CirclePlus className="size-6" />
@@ -131,16 +138,14 @@ function ListChange({
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent>{HTTPMethod === "PUT" ? "Edit" : "Add"}</TooltipContent>
+        <TooltipContent>{isEdit ? "Edit" : "Add"}</TooltipContent>
       </Tooltip>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {HTTPMethod === "PUT" ? "Edit List" : "New List"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Edit List" : "New List"}</DialogTitle>
           <DialogDescription className="sr-only">
-            {HTTPMethod === "PUT"
+            {isEdit
               ? "Update your list name and details."
               : "Create a new list by entering a name."}
           </DialogDescription>

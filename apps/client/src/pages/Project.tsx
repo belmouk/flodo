@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router";
 import { fetchApi } from "@/lib/utils";
 import ListItem from "@/components/ListItem";
 import ListsContainer from "@/components/ListsContainer";
@@ -10,6 +9,8 @@ import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import type { ApiError } from "@repo/utils";
 import { toast } from "sonner";
+import type { ProjectLoader } from "../routes";
+import { useLoaderData } from "react-router";
 
 export type ProjectWithLists = PrismaProject & {
   lists: (List & { tasks: Task[] })[];
@@ -22,12 +23,12 @@ type TaskPositionMutationType = {
 };
 
 function Project() {
-  const { projectId, workspaceId } = useParams();
+  const { projectId, workspaceId } = useLoaderData<typeof ProjectLoader>();
   const queryClient = useQueryClient();
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   const { isPending, isError, data, error } = useQuery({
-    queryKey: ["lists", Number(projectId)],
+    queryKey: ["lists", String(projectId)],
     queryFn: async () => {
       const res = await fetchApi<ProjectWithLists>(
         `/projects/${projectId}?includes=lists,tasks`,
@@ -52,7 +53,7 @@ function Project() {
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["lists", Number(projectId)],
+        queryKey: ["lists", String(projectId)],
       });
     },
     onError: (error: ApiError) => {
@@ -68,10 +69,7 @@ function Project() {
 
   return (
     <div>
-      <ListCreate
-        workspaceId={Number(workspaceId)}
-        projectId={Number(projectId)}
-      />
+      <ListCreate workspaceId={workspaceId} projectId={projectId} />
       <DragDropProvider
         onDragStart={(event) => {
           const sourceElement = event.operation.source;
@@ -97,7 +95,7 @@ function Project() {
           const targetListId = parseId(targetGroupId);
 
           queryClient.setQueryData(
-            ["lists", Number(projectId)],
+            ["lists", String(projectId)],
             (old: ProjectWithLists | undefined) => {
               if (!old) return old;
 
@@ -142,7 +140,7 @@ function Project() {
 
           const serverSnapshot = queryClient.getQueryData<ProjectWithLists>([
             "lists",
-            Number(projectId),
+            String(projectId),
           ]);
           if (!serverSnapshot) return;
 
@@ -188,8 +186,8 @@ function Project() {
             <ListItem
               key={list.id}
               list={list}
-              workspaceId={Number(workspaceId)}
-              projectId={Number(projectId)}
+              workspaceId={workspaceId}
+              projectId={projectId}
             />
           ))}
         </ListsContainer>

@@ -28,6 +28,7 @@ import { SquarePen, FilePlusCorner } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
 import { ProjectSchema } from "@repo/types";
+import { toast } from "sonner";
 
 type FormErrors = Record<string, string[] | undefined>;
 
@@ -53,25 +54,29 @@ function ProjectChange({
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [input, setInput] = useState({ name: "" });
+  const isEdit = HTTPMethod === "PUT";
   const mutation = useMutation({
     mutationFn: async ({ name }: typeof input) => {
-      const url =
-        HTTPMethod === "POST"
-          ? `/workspaces/${workspaceId}/projects`
-          : `/projects/${projectId}`;
+      const url = isEdit
+        ? `/projects/${projectId}`
+        : `/workspaces/${workspaceId}/projects`;
 
       const res = await fetchApi<Project>(url, HTTPMethod, { name });
       if (!res.success) throw res.error;
       return res.data;
     },
     onError(error: ApiError) {
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.status === 401) return navigate("/login");
-      setErrors(error.details);
+      if (error.status === 401) {
+        return navigate("/login");
+      } else if (error.status === 400) {
+        setErrors(error.details);
+      } else {
+        toast.error(error.message);
+      }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["workspace", workspaceId.toString()],
+        queryKey: ["workspace", String(workspaceId)],
       });
       setInput({ name: "" });
       setErrors({});
@@ -104,10 +109,10 @@ function ProjectChange({
       setErrors({});
       setInput({ name: "" });
     }
-    if (HTTPMethod === "PUT" && nextOpen) {
+    if (isEdit && nextOpen) {
       const projects = queryClient.getQueryData<Project[]>([
         "workspace",
-        workspaceId.toString(),
+        String(workspaceId),
       ]);
       const project = projects?.find((pj) => pj.id === projectId);
       if (project) setInput({ name: project.name });
@@ -121,7 +126,7 @@ function ProjectChange({
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button className="hover:cursor-pointer" variant={"ghost"}>
-              {HTTPMethod === "PUT" ? (
+              {isEdit ? (
                 <SquarePen className="size-6" />
               ) : (
                 <FilePlusCorner className="size-6" />
@@ -129,16 +134,14 @@ function ProjectChange({
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent>{HTTPMethod === "PUT" ? "Edit" : "Add"}</TooltipContent>
+        <TooltipContent>{isEdit ? "Edit" : "Add"}</TooltipContent>
       </Tooltip>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {HTTPMethod === "PUT" ? "Edit Project" : "New Project"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Project" : "New Project"}</DialogTitle>
           <DialogDescription className="sr-only">
-            {HTTPMethod === "PUT"
+            {isEdit
               ? "Update your project name and details."
               : "Create a new project by entering a name."}
           </DialogDescription>

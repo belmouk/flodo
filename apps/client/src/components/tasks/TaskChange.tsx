@@ -31,6 +31,7 @@ import type { ProjectWithLists } from "@/pages/Project";
 import type { User } from "@repo/db";
 import { TaskUpdateSchema } from "@repo/types";
 import type { TaskUpdateInput } from "@repo/types";
+import { toast } from "sonner";
 
 type TaskChangeProps =
   | {
@@ -76,21 +77,25 @@ function TaskChange({
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [input, setInput] = useState<FormInput>(cleanInput);
+  const isEdit = HTTPMethod === "PATCH";
   const mutation = useMutation({
     mutationFn: async (body: TaskUpdateInput) => {
-      const url =
-        HTTPMethod === "POST"
-          ? `/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks`
-          : `/tasks/${taskId}`;
+      const url = isEdit
+        ? `/tasks/${taskId}`
+        : `/workspaces/${workspaceId}/projects/${projectId}/lists/${listId}/tasks`;
 
       const res = await fetchApi<List>(url, HTTPMethod, body);
       if (!res.success) throw res.error;
       return res.data;
     },
     onError(error: ApiError) {
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      if (error.status === 401) return navigate("/login");
-      setErrors(error.details);
+      if (error.status === 401) {
+        return navigate("/login");
+      } else if (error.status === 400) {
+        setErrors(error.details);
+      } else {
+        toast.error(error.message);
+      }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["lists"] });
@@ -125,10 +130,10 @@ function TaskChange({
       setErrors({});
       setInput(cleanInput);
     }
-    if (HTTPMethod === "PATCH" && nextOpen) {
+    if (isEdit && nextOpen) {
       const project = queryClient.getQueryData<ProjectWithLists>([
         "lists",
-        projectId,
+        String(projectId),
       ]);
       if (project) {
         for (const list of project.lists) {
@@ -155,7 +160,7 @@ function TaskChange({
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button className="hover:cursor-pointer" variant={"ghost"}>
-              {HTTPMethod === "PATCH" ? (
+              {isEdit ? (
                 <SquarePen className="size-6" />
               ) : (
                 <CirclePlus className="size-6" />
@@ -163,18 +168,14 @@ function TaskChange({
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent>
-          {HTTPMethod === "PATCH" ? "Edit" : "Add"}
-        </TooltipContent>
+        <TooltipContent>{isEdit ? "Edit" : "Add"}</TooltipContent>
       </Tooltip>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {HTTPMethod === "PATCH" ? "Edit Task" : "New List"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Task" : "New Task"}</DialogTitle>
           <DialogDescription className="sr-only">
-            {HTTPMethod === "PATCH"
+            {isEdit
               ? "Update your task name and details."
               : "Create a new task by entering a name."}
           </DialogDescription>
