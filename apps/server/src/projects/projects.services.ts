@@ -22,9 +22,30 @@ export const getById = async (
     include: include.tasks
       ? {
           lists: { include: { tasks: { orderBy: { position: "asc" } } } },
-          members: include.members,
+          members: include.members
+            ? {
+                orderBy: { user: { lastName: "asc" } },
+                include: {
+                  user: {
+                    select: { firstName: true, lastName: true },
+                  },
+                },
+              }
+            : false,
         }
-      : { lists: include.lists, members: include.members },
+      : {
+          lists: include.lists,
+          members: include.members
+            ? {
+                orderBy: { user: { lastName: "asc" } },
+                include: {
+                  user: {
+                    select: { firstName: true, lastName: true },
+                  },
+                },
+              }
+            : false,
+        },
   });
 };
 

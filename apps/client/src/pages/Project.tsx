@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/utils";
 import ListItem from "@/components/ListItem";
 import ListsContainer from "@/components/ListsContainer";
-import type { Project as PrismaProject, List, Task } from "@repo/db";
+import type {
+  Project as PrismaProject,
+  List,
+  Task,
+  ProjectUser,
+} from "@repo/db";
 import ListCreate from "@/components/lists/ListCreate";
 import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
@@ -12,8 +17,9 @@ import { toast } from "sonner";
 import type { ProjectLoader } from "../routes";
 import { useLoaderData } from "react-router";
 
-export type ProjectWithLists = PrismaProject & {
+export type ProjectWithListsAndMembers = PrismaProject & {
   lists: (List & { tasks: Task[] })[];
+  members: (ProjectUser & { user: { firstName: string; lastName: string } })[];
 };
 
 type TaskPositionMutationType = {
@@ -30,8 +36,8 @@ function Project() {
   const { isPending, isError, data, error } = useQuery({
     queryKey: ["lists", String(projectId)],
     queryFn: async () => {
-      const res = await fetchApi<ProjectWithLists>(
-        `/projects/${projectId}?includes=lists,tasks`,
+      const res = await fetchApi<ProjectWithListsAndMembers>(
+        `/projects/${projectId}?includes=lists,tasks,members`,
         "GET",
       );
       if (res.success) return res.data;
@@ -96,7 +102,7 @@ function Project() {
 
           queryClient.setQueryData(
             ["lists", String(projectId)],
-            (old: ProjectWithLists | undefined) => {
+            (old: ProjectWithListsAndMembers | undefined) => {
               if (!old) return old;
 
               const sourceList = old.lists.find((l) => l.id === sourceListId);
@@ -138,10 +144,11 @@ function Project() {
           const taskId = parseId(source.id);
           const targetListId = parseId(source.group);
 
-          const serverSnapshot = queryClient.getQueryData<ProjectWithLists>([
-            "lists",
-            String(projectId),
-          ]);
+          const serverSnapshot =
+            queryClient.getQueryData<ProjectWithListsAndMembers>([
+              "lists",
+              String(projectId),
+            ]);
           if (!serverSnapshot) return;
 
           const targetListSnapshot = serverSnapshot.lists.find(

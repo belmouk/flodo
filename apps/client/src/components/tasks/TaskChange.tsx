@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useOutletContext } from "react-router";
+import { useNavigate } from "react-router";
 import { Button } from "../ui/button";
 import type React from "react";
 import { fetchApi } from "@/lib/utils";
@@ -27,11 +27,18 @@ import type { List } from "@repo/db";
 import { SquarePen, CirclePlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
-import type { ProjectWithLists } from "@/pages/Project";
-import type { User } from "@repo/db";
+import type { ProjectWithListsAndMembers } from "@/pages/Project";
 import { TaskUpdateSchema } from "@repo/types";
 import type { TaskUpdateInput } from "@repo/types";
 import { toast } from "sonner";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 type TaskChangeProps =
   | {
@@ -65,12 +72,11 @@ function TaskChange({
   projectId,
   taskId,
 }: TaskChangeProps) {
-  const user = useOutletContext<Omit<User, "password">>();
   const cleanInput = {
-    title: "",
-    description: "",
-    dueAt: "",
-    assigneeId: user.id,
+    title: undefined,
+    description: undefined,
+    dueAt: undefined,
+    assigneeId: undefined,
   } as const;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -119,9 +125,14 @@ function TaskChange({
 
   const handleChange = (
     field: keyof typeof input,
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement> | number,
   ) => {
-    setInput((prev) => ({ ...prev, [field]: e.target.value }));
+    if (typeof e === "number") {
+      setInput((prev) => ({ ...prev, [field]: e }));
+    } else {
+      setInput((prev) => ({ ...prev, [field]: e.target.value }));
+    }
+
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
@@ -131,7 +142,7 @@ function TaskChange({
       setInput(cleanInput);
     }
     if (isEdit && nextOpen) {
-      const project = queryClient.getQueryData<ProjectWithLists>([
+      const project = queryClient.getQueryData<ProjectWithListsAndMembers>([
         "lists",
         String(projectId),
       ]);
@@ -153,6 +164,11 @@ function TaskChange({
     }
     setOpen(nextOpen);
   };
+  const projectMembers = queryClient.getQueryData<ProjectWithListsAndMembers>([
+    "lists",
+    String(projectId),
+  ])?.members;
+  console.log(projectMembers);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -216,7 +232,45 @@ function TaskChange({
                 )}
               </Field>
               <Field>
-                <FieldLabel htmlFor="dueAt">Due At:</FieldLabel>
+                <FieldLabel htmlFor="description">Description:</FieldLabel>
+                <Input
+                  type="text"
+                  name="description"
+                  id="description"
+                  value={input.description}
+                  disabled={mutation.isPending}
+                  onChange={(e) => {
+                    handleChange("description", e);
+                  }}
+                />
+                {errors.description?.[0] && (
+                  <FieldError>{errors.description[0]}</FieldError>
+                )}
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="assigneeId">Assign To:</FieldLabel>
+                <Combobox
+                  items={projectMembers ?? []}
+                  value={input.assigneeId}
+                  onValueChange={(value) => {
+                    if (value) handleChange("description", value);
+                  }}
+                >
+                  <ComboboxInput placeholder="Select an assignee" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No items found.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(item) => (
+                        <ComboboxItem key={item.userId} value={item.userId}>
+                          {`${item.user.lastName} ${item.user.firstName}`}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="dueAt">Due By:</FieldLabel>
                 <Input
                   type="date"
                   name="dueAt"
