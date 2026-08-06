@@ -7,7 +7,7 @@ import {
   createAccessToken,
 } from "../auth/auth.services.js";
 import type { User } from "@repo/db";
-import { it, expect, beforeEach } from "vitest";
+import { it, expect, beforeEach, describe } from "vitest";
 
 const getAuthCookies = async (user: Omit<User, "password">) => {
   const [accessToken, refreshToken] = await Promise.all([
@@ -160,32 +160,57 @@ it("POST api/workspaces/:workspaceId/projects/:projectId/lists/:listId/tasks", a
   expect(res.body).toMatchObject(expectedTask!);
 });
 
-it("PATCH api/tasks/:taskId", async () => {
-  const { admin, member, list } = await seedDB();
-  const task = await prisma.task.create({
-    data: {
-      listId: list.id,
-      title: "task1",
-      dueAt: new Date(Date.now()),
-      assignerId: admin.id,
-      assigneeId: member.id,
-      position: 7000,
-    },
-    omit: { createdAt: true, dueAt: true },
+describe("PATCH api/tasks/:taskId", () => {
+  it("allows updating tasks", async () => {
+    const { admin, member, list } = await seedDB();
+    const task = await prisma.task.create({
+      data: {
+        listId: list.id,
+        title: "task1",
+        dueAt: new Date(Date.now()),
+        assignerId: admin.id,
+        assigneeId: member.id,
+        position: 7000,
+      },
+      omit: { createdAt: true, dueAt: true },
+    });
+
+    const cookies = await getAuthCookies(admin);
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: "task10" })
+      .set("Cookie", cookies);
+    const expectedTask = await prisma.task.findUnique({
+      where: { id: task.id },
+      omit: { dueAt: true, createdAt: true },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject(expectedTask!);
   });
 
-  const cookies = await getAuthCookies(admin);
-  const res = await request(app)
-    .patch(`/api/tasks/${task.id}`)
-    .send({ title: "task10" })
-    .set("Cookie", cookies);
-  const expectedTask = await prisma.task.findUnique({
-    where: { id: task.id },
-    omit: { dueAt: true, createdAt: true },
-  });
+  it("rejects change from strangers", async () => {
+    const { admin, member, random, list } = await seedDB();
+    const task = await prisma.task.create({
+      data: {
+        listId: list.id,
+        title: "task1",
+        dueAt: new Date(Date.now()),
+        assignerId: admin.id,
+        assigneeId: member.id,
+        position: 7000,
+      },
+      omit: { createdAt: true, dueAt: true },
+    });
 
-  expect(res.status).toBe(200);
-  expect(res.body).toMatchObject(expectedTask!);
+    const cookies = await getAuthCookies(random);
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: "task10" })
+      .set("Cookie", cookies);
+
+    expect(res.status).toBe(403);
+  });
 });
 
 it("DELETE api/tasks/:taskId", async () => {

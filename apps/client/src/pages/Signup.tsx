@@ -16,6 +16,7 @@ import { useNavigate } from "react-router";
 import type { User } from "@repo/db";
 import type { ApiError } from "@repo/utils";
 import { UserSignupSchema } from "@repo/types";
+import { toast } from "sonner";
 
 type FormErrors = Record<string, string[] | undefined>;
 
@@ -45,8 +46,11 @@ function Signup() {
       return navigate("/login");
     },
     onError: (error: ApiError) => {
-      if (error.status === 500) throw new Response(null, { status: 500 });
-      setErrors(error.details);
+      if (error.status === 400) {
+        setErrors(error.details);
+      } else {
+        toast.error(error.message);
+      }
     },
   });
 

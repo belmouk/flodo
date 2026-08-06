@@ -62,8 +62,7 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
 
   const INTERVAL_LIMIT = 10;
   const POSITION_INCREMENT = 1000;
-  if (input.location && input.listId) {
-    const { location, listId, id } = input;
+  if (location && rest.listId) {
     const neighborBefore = location.before
       ? await getById(location.before)
       : null;
@@ -73,7 +72,7 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
       const InBetweenTaskExists =
         (await prisma.task.count({
           where: {
-            listId,
+            listId: rest.listId,
             position: {
               lt: neighborAfter.position,
               gt: neighborBefore.position,
@@ -100,7 +99,7 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
         };
 
         const tasks = await prisma.task.findMany({
-          where: { listId },
+          where: { listId: rest.listId },
           orderBy: { position: "asc" },
           select: { id: true },
         });
@@ -134,13 +133,16 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
     } else if (neighborBefore) {
       const afterTasksExist =
         (await prisma.task.count({
-          where: { listId, position: { gt: neighborBefore.position } },
+          where: {
+            listId: rest.listId,
+            position: { gt: neighborBefore.position },
+          },
         })) > 0;
       if (afterTasksExist)
         throw new ApiError("An after task exists ", 400, "TaskPositionError");
       const currentMaxPosition = await prisma.task.aggregate({
         _max: { position: true },
-        where: { listId },
+        where: { listId: rest.listId },
       });
       return await prisma.task.update({
         where: { id },
@@ -154,7 +156,10 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
     } else if (neighborAfter) {
       const beforeTasksExist =
         (await prisma.task.count({
-          where: { listId, position: { lt: neighborAfter.position } },
+          where: {
+            listId: rest.listId,
+            position: { lt: neighborAfter.position },
+          },
         })) > 0;
       if (beforeTasksExist)
         throw new ApiError("A before task exists ", 400, "TaskPositionError");
@@ -166,7 +171,7 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
         newPosition = POSITION_INCREMENT;
 
         const tasks = await prisma.task.findMany({
-          where: { listId },
+          where: { listId: rest.listId },
           orderBy: { position: "asc" },
           select: { id: true },
         });
@@ -187,7 +192,8 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
         data: { ...cleanInput, position: newPosition },
       });
     } else {
-      const tasksExist = (await prisma.task.count({ where: { listId } })) > 0;
+      const tasksExist =
+        (await prisma.task.count({ where: { listId: rest.listId } })) > 0;
       if (tasksExist)
         throw new ApiError(
           "Selected list already has tasks",
@@ -201,7 +207,7 @@ export const update = async (input: TaskUpdateInput & { id: number }) => {
     }
   }
   return await prisma.task.update({
-    where: { id: input.id },
+    where: { id },
     data: cleanInput,
   });
 };

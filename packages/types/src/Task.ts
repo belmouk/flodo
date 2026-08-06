@@ -29,7 +29,8 @@ export const TaskUpdateSchema = z.object({
     .string()
     .trim()
     .max(5000, "Description content is too long")
-    .optional(),
+    .optional()
+    .nullable(),
   dueAt: z.coerce.date("Due date should be of type date").optional(),
   assigneeId: z.coerce
     .number()

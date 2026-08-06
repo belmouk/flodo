@@ -8,6 +8,8 @@ import type { Project as PrismaProject, List, Task } from "@repo/db";
 import ListCreate from "@/components/lists/ListCreate";
 import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
+import type { ApiError } from "@repo/utils";
+import { toast } from "sonner";
 
 export type ProjectWithLists = PrismaProject & {
   lists: (List & { tasks: Task[] })[];
@@ -42,7 +44,7 @@ function Project() {
       location,
       listId,
     }: TaskPositionMutationType) => {
-      const result = await fetchApi(`/tasks/${taskId}`, "PATCH", {
+      const result = await fetchApi<Task>(`/tasks/${taskId}`, "PATCH", {
         listId,
         location,
       });
@@ -52,6 +54,9 @@ function Project() {
       await queryClient.invalidateQueries({
         queryKey: ["lists", Number(projectId)],
       });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message);
     },
   });
 
