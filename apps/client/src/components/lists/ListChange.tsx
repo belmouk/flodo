@@ -27,7 +27,7 @@ import type { List } from "@repo/db";
 import { SquarePen, CirclePlus } from "lucide-react";
 import { TooltipTrigger, TooltipContent, Tooltip } from "../ui/tooltip";
 import type { ApiError } from "@repo/utils";
-import type { ProjectWithLists } from "@/pages/Project";
+import type { ProjectWithListsAndMembers } from "@/pages/Project";
 import { ListSchema } from "@repo/types";
 import { toast } from "sonner";
 
@@ -114,7 +114,7 @@ function ListChange({
       setInput({ name: "" });
     }
     if (isEdit && nextOpen) {
-      const project = queryClient.getQueryData<ProjectWithLists>([
+      const project = queryClient.getQueryData<ProjectWithListsAndMembers>([
         "lists",
         String(projectId),
       ]);

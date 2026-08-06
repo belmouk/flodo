@@ -32,4 +32,10 @@ export default defineConfig([
       "@typescript-eslint/only-throw-error": ["error", { allow: ["Response"] }],
     },
   },
+  {
+    files: ["src/components/ui/**/*.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
 ]);

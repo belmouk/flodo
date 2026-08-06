@@ -7,15 +7,17 @@ export const TaskCreationSchema = z.object({
     .min(1, "Specify the task")
     .max(255, "Task title is too long"),
   dueAt: z.coerce.date("Due date should be of type date"),
-  description: z
-    .string()
-    .trim()
-    .max(5000, "Description content is too long")
-    .optional(),
-  assigneeId: z.coerce
-    .number()
-    .int()
-    .positive("AssigneeId must be a positive integer"),
+  description: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z
+      .string()
+      .trim()
+      .min(1)
+      .max(5000, "Description content is too long")
+      .optional()
+      .nullable(),
+  ),
+  assigneeId: z.coerce.number().int().positive("A valid assignee is required."),
 });
 
 export const TaskUpdateSchema = z.object({
@@ -25,17 +27,21 @@ export const TaskUpdateSchema = z.object({
     .min(1, "Specify the task")
     .max(255, "Task title is too long")
     .optional(),
-  description: z
-    .string()
-    .trim()
-    .max(5000, "Description content is too long")
-    .optional()
-    .nullable(),
+  description: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z
+      .string()
+      .trim()
+      .min(1)
+      .max(5000, "Description content is too long")
+      .optional()
+      .nullable(),
+  ),
   dueAt: z.coerce.date("Due date should be of type date").optional(),
   assigneeId: z.coerce
     .number()
     .int()
-    .positive("AssigneeId must be a positive integer")
+    .positive("A valid assignee is required.")
     .optional(),
   status: z
     .enum(["WIP", "DONE", "OVERDUE"], "Task status not found")

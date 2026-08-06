@@ -39,6 +39,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import type { Task } from "@repo/db";
 
 type TaskChangeProps =
   | {
@@ -62,7 +63,14 @@ type FormInput = {
   title?: string;
   description?: string;
   dueAt?: string;
-  assigneeId?: number;
+  assigneeId?: number | null;
+};
+
+const CLEAN_INPUT: FormInput = {
+  title: "",
+  description: "",
+  dueAt: "",
+  assigneeId: null,
 };
 
 function TaskChange({
@@ -72,17 +80,11 @@ function TaskChange({
   projectId,
   taskId,
 }: TaskChangeProps) {
-  const cleanInput = {
-    title: undefined,
-    description: undefined,
-    dueAt: undefined,
-    assigneeId: undefined,
-  } as const;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [input, setInput] = useState<FormInput>(cleanInput);
+  const [input, setInput] = useState<FormInput>(CLEAN_INPUT);
   const isEdit = HTTPMethod === "PATCH";
   const mutation = useMutation({
     mutationFn: async (body: TaskUpdateInput) => {
@@ -105,11 +107,24 @@ function TaskChange({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["lists"] });
-      setInput(cleanInput);
+      setInput(CLEAN_INPUT);
       setErrors({});
       setOpen(false);
     },
   });
+
+  const projectMembers =
+    queryClient.getQueryData<ProjectWithListsAndMembers>([
+      "lists",
+      String(projectId),
+    ])?.members || [];
+  const items = projectMembers.map((member) => ({
+    label: `${member.user.lastName} ${member.user.firstName}`,
+    value: member.userId,
+  }));
+
+  const defaultItem =
+    items.find((item) => item.value === input.assigneeId) ?? null;
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -139,7 +154,7 @@ function TaskChange({
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setErrors({});
-      setInput(cleanInput);
+      setInput(CLEAN_INPUT);
     }
     if (isEdit && nextOpen) {
       const project = queryClient.getQueryData<ProjectWithListsAndMembers>([
@@ -147,34 +162,30 @@ function TaskChange({
         String(projectId),
       ]);
       if (project) {
+        let task: Task | undefined = undefined;
         for (const list of project.lists) {
           if (list.id === listId) {
-            for (const task of list.tasks) {
-              if (task.id === taskId)
-                setInput({
-                  title: task.title,
-                  description: task.description || undefined,
-                  dueAt: new Date(task.dueAt).toISOString().split("T")[0],
-                  assigneeId: task.assigneeId,
-                });
+            for (const ts of list.tasks) {
+              if (ts.id === taskId) {
+                task = ts;
+                break;
+              }
             }
+            break;
           }
+        }
+        if (task) {
+          setInput({
+            title: task.title,
+            description: task.description ?? "",
+            dueAt: new Date(task.dueAt).toISOString().split("T")[0] ?? "",
+            assigneeId: task.assigneeId,
+          });
         }
       }
     }
     setOpen(nextOpen);
   };
-  const projectMembers =
-    queryClient.getQueryData<ProjectWithListsAndMembers>([
-      "lists",
-      String(projectId),
-    ])?.members || [];
-  const items = projectMembers.map((member) => ({
-    label: `${member.user.lastName} ${member.user.firstName}`,
-    value: member.userId,
-  }));
-
-  const defaultItem = items.find((item) => item.value === input.assigneeId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -193,7 +204,11 @@ function TaskChange({
         <TooltipContent>{isEdit ? "Edit" : "Add"}</TooltipContent>
       </Tooltip>
 
-      <DialogContent>
+      <DialogContent
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Task" : "New Task"}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -253,24 +268,24 @@ function TaskChange({
                   <FieldError>{errors.dueAt[0]}</FieldError>
                 )}
               </Field>
-              <Field className="">
+              <Field>
                 <FieldLabel htmlFor="assigneeId">Assign To:</FieldLabel>
                 <Combobox
                   items={items}
-                  itemToStringValue={(member: (typeof items)[number]) =>
-                    member.label
+                  itemToStringValue={(item: (typeof items)[number]) =>
+                    item.label
                   }
                   onValueChange={(item) => {
                     if (item) handleChange("assigneeId", item.value);
-                    console.log(input);
                   }}
-                  defaultValue={defaultItem}
+                  value={defaultItem}
+                  id="assigneeId"
                 >
                   <ComboboxInput placeholder="Select an assignee" />
-                  <ComboboxContent>
+                  <ComboboxContent className="z-100 pointer-events-auto">
                     <ComboboxEmpty>No items found.</ComboboxEmpty>
                     <ComboboxList>
-                      {(item) => (
+                      {(item: (typeof items)[number]) => (
                         <ComboboxItem key={item.value} value={item}>
                           {item.label}
                         </ComboboxItem>
